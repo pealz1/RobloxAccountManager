@@ -31,3 +31,15 @@ def write_json_atomic(path: str, data, prefix: str = ".atomic.", fsync: bool = F
         except OSError:
             pass
         raise
+
+
+def quarantine_corrupt(path: str) -> None:
+    target = path + ".corrupt"
+    try:
+        os.replace(path, target)
+    except OSError:
+        return
+    print(
+        f"[WARNING] {os.path.basename(path)} could not be read. "
+        f"It was moved to {os.path.basename(target)}."
+    )
