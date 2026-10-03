@@ -203,6 +203,13 @@ This project is provided for educational and account management purposes. Users 
 
 Issues and pull requests are welcome. Keep changes focused, describe how they were tested, and avoid committing files from `AccountManagerData`.
 
+Run the tests before opening a pull request:
+
+```powershell
+uv sync --locked
+uv run --no-sync python -m unittest discover -s tests
+```
+
 ## Support
 
 - [GitHub issues](https://github.com/pealz1/RobloxAccountManager/issues) for this fork
