@@ -220,6 +220,15 @@ class RobloxAccountManager:
                 if 'cookie_valid' not in account_data:
                     account_data['cookie_valid'] = None
     
+    def _merge_existing_account(self, username, record):
+        existing = self.accounts.get(username)
+        if isinstance(existing, dict):
+            if not record.get('note'):
+                record['note'] = existing.get('note', '')
+            if not record.get('password') and existing.get('password'):
+                record['password'] = existing['password']
+        return record
+
     def save_accounts(self):
         """Save accounts to JSON file"""
         with self._accounts_lock:
@@ -895,7 +904,7 @@ class RobloxAccountManager:
                         if username and cookie:
                             saved_password = password or instance_passwords[driver_index]
                             with self._accounts_lock:
-                                self.accounts[username] = {
+                                self.accounts[username] = self._merge_existing_account(username, {
                                     'username':   username,
                                     'cookie':     cookie,
                                     'user_id':    user_id or 0,
@@ -904,7 +913,7 @@ class RobloxAccountManager:
                                     'note':       '',
                                     'avatar_url': avatar_url or '',
                                     'cookie_valid': True,
-                                }
+                                })
 
                             print(f"[SUCCESS] Successfully added account: {username}")
                             nonlocal success_count
@@ -1052,7 +1061,7 @@ class RobloxAccountManager:
                 pass
 
             with self._accounts_lock:
-                self.accounts[username] = {
+                self.accounts[username] = self._merge_existing_account(username, {
                     'username':   username,
                     'cookie':     cookie,
                     'user_id':    user_id,
@@ -1060,7 +1069,7 @@ class RobloxAccountManager:
                     'note':       '',
                     'avatar_url': avatar_url,
                     'cookie_valid': True,
-                }
+                })
                 if save:
                     self.save_accounts()
 
