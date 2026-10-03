@@ -1,24 +1,16 @@
-[![Latest release](https://img.shields.io/github/v/release/evanovar/RobloxAccountManager?label=release)](https://github.com/evanovar/RobloxAccountManager/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/evanovar/RobloxAccountManager/total)](https://github.com/evanovar/RobloxAccountManager/releases)
-[![License](https://img.shields.io/github/license/evanovar/RobloxAccountManager)](LICENSE)
-[![Discord](https://img.shields.io/discord/1436930121897476140?label=Discord)](https://discord.gg/SZaZU8zwZA)
-[![Website](https://img.shields.io/badge/website-evanovarram.com-1F58FF)](https://www.evanovarram.com/)
-![OS](https://img.shields.io/badge/os-windows-0078D4)<br>
-[![Download](https://img.shields.io/badge/Download-280ab?style=for-the-badge)](https://github.com/evanovar/RobloxAccountManager/releases/latest)
+[![License](https://img.shields.io/github/license/pealz1/RobloxAccountManager)](LICENSE)
+![OS](https://img.shields.io/badge/os-windows-0078D4)
 
-> [!IMPORTANT]
-> Before you see this as a **"Virus"** or **"Unofficial,"** please read:
-> - **Project Status:** This project was inspired by the original Roblox Account Manager by ic3w0lf22. I recreated it in Python as a personal project because I thought it would be fun to build and learn from. It is not intended to be an official continuation of the original project.<br><br>
-> - **100% Open Source:** Every line of code is transparent and available for everyone. If you don't trust the .exe, you are encouraged to run the script directly from the source code.<br><br>
-> - **Integrity:** The standalone .exe in the releases is compiled directly from this code with zero alterations.
+> [!NOTE]
+> This is a fork of [evanovar/RobloxAccountManager](https://github.com/evanovar/RobloxAccountManager) (Evanovar RAM), maintained by [pealz1](https://github.com/pealz1). It is not the official project. The original code, design and most of the history belong to evanovar and the other upstream contributors, and the GPL-3.0 license is kept as is. Fixes that make sense for everyone are sent upstream as pull requests.
 
-# Evanovar RAM
+# Pealz RAM
 
-Evanovar RAM is an open source Windows desktop application for organizing Roblox accounts, launching multiple clients, and automating common account management tasks. It combines encrypted local storage, multi-account launching, process controls, Roblox settings management, and diagnostics in one interface.
+Pealz RAM is a fork of Evanovar RAM, an open source Windows desktop application for organizing Roblox accounts, launching multiple clients, and automating common account management tasks. It combines encrypted local storage, multi-account launching, process controls, Roblox settings management, and diagnostics in one interface.
 
-[Download the latest release](https://github.com/evanovar/RobloxAccountManager/releases/latest) | [Documentation](https://www.evanovarram.com/documentation/developer) | [Discord](https://discord.gg/SZaZU8zwZA) | [Website](https://www.evanovarram.com/)
+[Download the latest release](https://github.com/pealz1/RobloxAccountManager/releases/latest) | [Upstream project](https://github.com/evanovar/RobloxAccountManager) | [Upstream documentation](https://evanovars-roblox-account-manager.gitbook.io/evanovars-ram)
 
-![Evanovar RAM account manager interface](https://github.com/user-attachments/assets/6dab4d69-11fd-47d0-9348-db2aef5211fb)
+![Pealz RAM account manager interface](https://github.com/user-attachments/assets/6dab4d69-11fd-47d0-9348-db2aef5211fb)
 
 ## Table of contents
 
@@ -47,8 +39,8 @@ Evanovar RAM is an open source Windows desktop application for organizing Roblox
 
 ### Windows executable
 
-1. Open the [latest release](https://github.com/evanovar/RobloxAccountManager/releases/latest).
-2. Download `EvanovarRAM-v<version>.exe`.
+1. Open the [latest release](https://github.com/pealz1/RobloxAccountManager/releases/latest).
+2. Download `PealzRAM-v<version>.exe`.
 3. Place it in a folder where the application can keep its local data.
 4. Run the executable.
 
@@ -64,7 +56,7 @@ Requirements:
 - Chrome, Firefox, or Edge for browser login, unless portable Chromium is installed from the application
 
 ```powershell
-git clone https://github.com/evanovar/RobloxAccountManager.git
+git clone https://github.com/pealz1/RobloxAccountManager.git
 cd RobloxAccountManager
 uv sync --locked
 uv run python src/main.py
@@ -141,7 +133,7 @@ uv run python src/main.py
 | Feature | Description |
 | :--- | :--- |
 | System tray | Hide the main window to the system tray, restore it from the tray icon, or exit from the tray menu. |
-| Windows startup | Optionally start Evanovar RAM with Windows and add a Start Menu shortcut. |
+| Windows startup | Optionally start Pealz RAM with Windows and add a Start Menu shortcut. |
 | Update manager | Check GitHub releases on startup or manually, then download updates from the application. |
 | Discord webhooks | Send selected log levels, Auto-Rejoin events, optional mentions, and periodic screenshots to a configured webhook. |
 | WebSocket server | Run an optional local command server with a configurable port and encrypted password storage. Password-protected commands use `AUTH <password> | <command>`. |
@@ -162,7 +154,7 @@ uv run python src/main.py
 
 ## Data and privacy
 
-Evanovar RAM stores its persistent data in `AccountManagerData`. This includes saved accounts, settings, groups, recent games, local Roblox settings, avatar cache, and diagnostic logs.
+Pealz RAM stores its persistent data in `AccountManagerData`. This includes saved accounts, settings, groups, recent games, local Roblox settings, avatar cache, and diagnostic logs.
 
 The application does not include hidden telemetry, advertising SDKs, or analytics tracking. Network communication is limited to enabled or requested functionality:
 
@@ -182,13 +174,13 @@ uv sync --locked --group build
 uv run --no-sync python scripts/build.py
 ```
 
-The executable is written to `dist/EvanovarRAM.exe`. Build configuration lives in `packaging/EvanovarRAM.spec`, and version metadata is generated during the build. Release builds also create `dist/EvanovarRAM-v<version>.exe` for GitHub Releases.
+The executable is written to `dist/PealzRAM.exe`. Build configuration lives in `packaging/PealzRAM.spec`, and version metadata is generated during the build. Release builds also create `dist/PealzRAM-v<version>.exe` for GitHub Releases.
 
 `src/utils/version.py` is the single source of truth for the application version. Release tags must match `APP_VERSION`.
 
 ## System changes and uninstallation
 
-Depending on enabled features, Evanovar RAM can:
+Depending on enabled features, Pealz RAM can:
 
 - Create and update files under `AccountManagerData`.
 - Register or remove Windows startup and Start Menu entries.
@@ -213,10 +205,9 @@ Issues and pull requests are welcome. Keep changes focused, describe how they we
 
 ## Support
 
-- [Discord community](https://discord.gg/SZaZU8zwZA)
-- [Documentation](https://evanovars-roblox-account-manager.gitbook.io/evanovars-ram)
-- [GitHub issues](https://github.com/evanovar/RobloxAccountManager/issues)
+- [GitHub issues](https://github.com/pealz1/RobloxAccountManager/issues) for this fork
+- [Upstream documentation](https://evanovars-roblox-account-manager.gitbook.io/evanovars-ram) and [Discord community](https://discord.gg/SZaZU8zwZA), which belong to the original project
 
 ## License
 
-Evanovar RAM is available under the [GNU General Public License v3.0](LICENSE).
+Pealz RAM is available under the [GNU General Public License v3.0](LICENSE). Copyright for the original work remains with evanovar and the upstream contributors.

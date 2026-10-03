@@ -15,7 +15,7 @@ ENV/
 build/
 dist/
 *.spec
-!packaging/EvanovarRAM.spec
+!packaging/PealzRAM.spec
 *.spec.log
 
 # Account data (SENSITIVE - DO NOT COMMIT!)

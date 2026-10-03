@@ -1,5 +1,5 @@
 [project]
-name = "evanovar-ram"
+name = "pealz-ram"
 dynamic = ["version"]
 description = "A Windows desktop application for managing multiple Roblox accounts."
 readme = "README.md"

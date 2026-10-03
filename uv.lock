@@ -111,7 +111,7 @@ wheels = [
 ]
 
 [[package]]
-name = "evanovar-ram"
+name = "pealz-ram"
 source = { editable = "." }
 dependencies = [
     { name = "psutil" },

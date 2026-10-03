@@ -19,14 +19,14 @@ import requests
 
 from utils.app_paths import get_data_dir
 
-GITHUB_API = "https://api.github.com/repos/evanovar/RobloxAccountManager/releases/latest"
-RELEASES_PAGE = "https://github.com/evanovar/RobloxAccountManager/releases/latest"
+GITHUB_API = "https://api.github.com/repos/pealz1/RobloxAccountManager/releases/latest"
+RELEASES_PAGE = "https://github.com/pealz1/RobloxAccountManager/releases/latest"
 RELEASE_ASSET_PATTERN = re.compile(
-    r"^EvanovarRAM-v\d+\.\d+\.\d+(?:\.\d+)?\.exe$",
+    r"^PealzRAM-v\d+\.\d+\.\d+(?:\.\d+)?\.exe$",
     re.IGNORECASE,
 )
 LEGACY_ASSET_NAMES = (
-    "EvanovarRAM.exe",
+    "PealzRAM.exe",
     "RobloxAccountManager.exe",
 )
 PROCESS_WAIT_SECONDS = 120
@@ -74,7 +74,7 @@ def get_exe_download_url() -> tuple[str, str] | None:
         release_tag = str(release.get("tag_name", "")).strip()
         if release_tag and not release_tag.lower().startswith("v"):
             release_tag = f"v{release_tag}"
-        expected_name = f"EvanovarRAM-{release_tag}.exe" if release_tag else ""
+        expected_name = f"PealzRAM-{release_tag}.exe" if release_tag else ""
         preferred = next(
             (
                 asset
@@ -182,7 +182,7 @@ try {{
     Remove-Item -LiteralPath $UpdateDirectory -Force -ErrorAction SilentlyContinue
     exit 0
 }} catch {{
-    $detail = "Evanovar RAM automatic update failed.`r`n"
+    $detail = "Pealz RAM automatic update failed.`r`n"
     $detail += "Timestamp: $([DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss'))`r`n"
     $detail += "Destination: $DestinationPath`r`n"
     $detail += "Error: $($_.Exception.Message)"
@@ -248,14 +248,14 @@ def download_update(
             on_progress(0)
             result = get_exe_download_url()
             if not result:
-                on_done(False, "No Evanovar RAM executable was found in the latest release.")
+                on_done(False, "No Pealz RAM executable was found in the latest release.")
                 return
 
             url, filename = result
             print(f"[INFO] Downloading {filename} from {url}")
             on_progress(2)
 
-            update_directory = tempfile.mkdtemp(prefix="evanovar_ram_update_")
+            update_directory = tempfile.mkdtemp(prefix="pealz_ram_update_")
             source_path = os.path.join(update_directory, "update.exe")
 
             response = requests.get(url, stream=True, timeout=60)

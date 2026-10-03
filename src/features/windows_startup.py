@@ -12,7 +12,7 @@ from classes.operation_result import OperationResult, unexpected_result
 from utils.app_paths import get_app_dir, get_data_dir, get_resource_path
 
 
-_SHORTCUT_NAME = "Evanovar RAM.lnk"
+_SHORTCUT_NAME = "Pealz RAM.lnk"
 
 
 def get_startup_folder() -> str:
@@ -113,7 +113,7 @@ def _run_powershell(script: str) -> OperationResult:
         return OperationResult.failure(
             "STARTUP_SHORTCUT_CREATE_FAILED",
             "Startup Shortcut Could Not Be Created",
-            "Windows could not create the Evanovar RAM Startup shortcut.",
+            "Windows could not create the Pealz RAM Startup shortcut.",
             detail=detail or f"PowerShell exit code: {completed.returncode}",
         )
     return OperationResult.success()
@@ -149,7 +149,7 @@ def enable_startup() -> OperationResult:
             f"$shortcut.TargetPath = {_powershell_quote(details['target'])}; "
             f"$shortcut.Arguments = {_powershell_quote(details['arguments'])}; "
             f"$shortcut.WorkingDirectory = {_powershell_quote(details['working_directory'])}; "
-            f"$shortcut.Description = {_powershell_quote('Start Evanovar RAM with Windows')}; "
+            f"$shortcut.Description = {_powershell_quote('Start Pealz RAM with Windows')}; "
             f"$shortcut.IconLocation = {_powershell_quote(icon_location)}; "
             "$shortcut.Save();"
         )
@@ -164,11 +164,11 @@ def enable_startup() -> OperationResult:
                 detail=f"Shortcut: {shortcut_path}",
             )
         return OperationResult.success(
-            "Evanovar RAM will start with Windows.",
+            "Pealz RAM will start with Windows.",
             data={"shortcut_path": shortcut_path},
         )
     except Exception as exc:
-        return unexpected_result("Enabling Evanovar RAM at Windows startup", exc)
+        return unexpected_result("Enabling Pealz RAM at Windows startup", exc)
 
 
 def disable_startup() -> OperationResult:
@@ -187,17 +187,17 @@ def disable_startup() -> OperationResult:
             return OperationResult.failure(
                 "STARTUP_SHORTCUT_REMOVE_FAILED",
                 "Startup Shortcut Could Not Be Removed",
-                "Windows did not remove the Evanovar RAM Startup shortcut.",
+                "Windows did not remove the Pealz RAM Startup shortcut.",
                 detail=f"Shortcut: {shortcut_path}",
             )
         return OperationResult.success(
-            "Evanovar RAM will no longer start with Windows.",
+            "Pealz RAM will no longer start with Windows.",
             data={"shortcut_path": shortcut_path},
         )
     except Exception as exc:
         return OperationResult.failure(
             "STARTUP_SHORTCUT_REMOVE_FAILED",
             "Startup Shortcut Could Not Be Removed",
-            "The Evanovar RAM Startup shortcut could not be removed.",
+            "The Pealz RAM Startup shortcut could not be removed.",
             detail=f"{type(exc).__name__}: {exc}",
         )
