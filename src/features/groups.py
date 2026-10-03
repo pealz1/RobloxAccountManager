@@ -7,10 +7,10 @@ from __future__ import annotations
 
 import json
 import os
-import tempfile
 import threading
 from typing import Optional
 from utils.app_paths import get_data_dir
+from utils.atomic_io import write_json_atomic
 
 _GROUPS_FILE = os.path.join(get_data_dir(), "groups.json")
 _LOCK = threading.RLock()
@@ -56,25 +56,8 @@ def _save(data: dict) -> None:
         }
         if _CACHE == normalized:
             return
-        os.makedirs(get_data_dir(), exist_ok=True)
-        descriptor, temp_path = tempfile.mkstemp(
-            prefix=".groups.", suffix=".tmp", dir=get_data_dir()
-        )
-        try:
-            with os.fdopen(descriptor, "w", encoding="utf-8") as f:
-                json.dump(normalized, f, indent=2)
-            os.replace(temp_path, _GROUPS_FILE)
-            _CACHE = normalized
-        except OSError:
-            try:
-                os.close(descriptor)
-            except OSError:
-                pass
-            try:
-                os.remove(temp_path)
-            except OSError:
-                pass
-            raise
+        write_json_atomic(_GROUPS_FILE, normalized, prefix=".groups.")
+        _CACHE = normalized
 
 def get_group_names() -> list[str]:
     return list(_load().get("groups", []))

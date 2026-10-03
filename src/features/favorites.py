@@ -7,9 +7,9 @@ from __future__ import annotations
 
 import json
 import os
-import tempfile
 
 from utils.app_paths import get_data_dir
+from utils.atomic_io import write_json_atomic
 
 _DATA_DIR = get_data_dir()
 _FAVORITES_FILE = os.path.join(_DATA_DIR, "favorites.json")
@@ -28,24 +28,7 @@ def load_favorites() -> list[dict]:
 
 
 def save_favorites(favorites: list[dict]) -> None:
-    os.makedirs(_DATA_DIR, exist_ok=True)
-    descriptor, temp_path = tempfile.mkstemp(
-        prefix=".favorites.", suffix=".tmp", dir=_DATA_DIR
-    )
-    try:
-        with os.fdopen(descriptor, "w", encoding="utf-8") as f:
-            json.dump(favorites, f, indent=2)
-        os.replace(temp_path, _FAVORITES_FILE)
-    except Exception:
-        try:
-            os.close(descriptor)
-        except OSError:
-            pass
-        try:
-            os.remove(temp_path)
-        except OSError:
-            pass
-        raise
+    write_json_atomic(_FAVORITES_FILE, favorites, prefix=".favorites.")
 
 
 def add_favorite(place_id: str, name: str, private_server: str = "") -> None:
