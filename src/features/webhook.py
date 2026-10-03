@@ -20,6 +20,8 @@ from datetime import datetime, timezone
 from io import BytesIO
 from typing import Callable
 
+import features.diagnostics as diagnostics
+
 
 _APP_FOOTER = "Pealz's Roblox Account Manager"
 _AR_EVENTS: list[tuple[str, str, int]] = [
@@ -170,6 +172,7 @@ class WebhookStdoutInterceptor:
         self._push_console(line)
         if not line.strip():
             return
+        line = diagnostics.redact(line)
         try:
             cfg = self._get_cfg()
             if not cfg.get("enabled"):
