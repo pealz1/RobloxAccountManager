@@ -1,1 +1,0 @@
-"""Evanovar RAM tests."""

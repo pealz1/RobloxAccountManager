@@ -1,0 +1,11 @@
+{
+  "format": "ram-accounts-backup",
+  "version": 1,
+  "salt": "1DiNvZykgTS3N9OXePKuMpPF55MyjUFT71ZYbhbj9q8=",
+  "data": {
+    "password_encoding": "utf-8",
+    "nonce": "N/raOliN3UExQVOLdVwXng==",
+    "tag": "TeGyrwWz4BIiFtqSIgMvjQ==",
+    "ciphertext": "ZvsOqUoQBn2QGbjzPTjOoP1vMnAOb2kg8j5PL0zshzf141LNWcZZKKOMQCbGHs5eyf99iLrCWp/hO7Sr2bgaGQhsQ25LLzq5Lup5BjMt+DMBJwLEoMkw39ibcTPlT5EJeRHNeljNttZh5yeTpgv1TTKGi2UsAdsb+8bHaT/RYjeRx5QdPCJrFfM6HWZLqYU8h5vn8Ad+YjttYgpSr0Tt4XOF/g3XmPgPm4/nBWvg257Dtzz1qpDIrjGWQetZ5+4OuzYz13eG8viqReysCZxaqKsKeGjVamqAnlGy0ia5/Kw="
+  }
+}

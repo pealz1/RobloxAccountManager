@@ -1,0 +1,52 @@
+name: Upstream sync watch
+
+# Nova RAM is a full-language rewrite, so upstream changes cannot be merged as
+# diffs. This job lists new commits on evanovar/RobloxAccountManager since the
+# watermark in .github/upstream-last-ported.txt and opens (or updates) a tracking
+# issue so nothing is silently missed. Advance the watermark when you port them.
+
+on:
+  schedule:
+    - cron: "0 9 * * 1" # Mondays 09:00 UTC
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compare against upstream
+        env:
+          GH_TOKEN: ${{ github.token }}
+          UPSTREAM: evanovar/RobloxAccountManager
+        shell: bash
+        run: |
+          set -euo pipefail
+          watermark="$(tr -d '[:space:]' < .github/upstream-last-ported.txt)"
+          compare="$(gh api "repos/$UPSTREAM/compare/$watermark...main" || echo '{}')"
+          ahead="$(echo "$compare" | jq -r '.ahead_by // 0')"
+          echo "Upstream is $ahead commit(s) ahead of $watermark."
+          if [ "$ahead" -eq 0 ]; then
+            echo "Nothing to port."; exit 0
+          fi
+          body="$(mktemp)"
+          {
+            echo "Upstream \`$UPSTREAM\` has **$ahead** new commit(s) since \`$watermark\`."
+            echo
+            echo "Review these and port anything relevant into the Rust code, then set"
+            echo "\`.github/upstream-last-ported.txt\` to the newest ported SHA."
+            echo
+            echo "$compare" | jq -r '.commits[] | "- [`\(.sha[0:7])`](\(.html_url)) \(.commit.message | split("\n")[0])"'
+          } > "$body"
+          title="Upstream sync: $ahead new commit(s) to review"
+          existing="$(gh issue list --label upstream-sync --state open --json number --jq '.[0].number' || true)"
+          if [ -n "${existing:-}" ] && [ "${existing}" != "null" ]; then
+            gh issue edit "$existing" --title "$title" --body-file "$body"
+            echo "Updated issue #$existing"
+          else
+            gh label create upstream-sync --color 1f58ff --description "New upstream commits to port" 2>/dev/null || true
+            gh issue create --title "$title" --body-file "$body" --label upstream-sync
+          fi

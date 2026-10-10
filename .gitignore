@@ -1,60 +1,31 @@
-# Python cache and bytecode
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
+# Rust build output
+/target/
 
-# Virtual environments
-env/
-venv/
-ENV/
-.venv/
-
-# PyInstaller build artifacts
-build/
-dist/
-*.spec
-!packaging/EvanovarRAM.spec
-*.spec.log
-
-# Account data (SENSITIVE - DO NOT COMMIT!)
-saved_accounts.json
-saved_accounts.json.bak
+# App data (SENSITIVE - never commit)
+NovaData/
 AccountManagerData/
+*.vault
+*.vault.bak
 
-# IDE and editor files
+# Editors / OS
 .vscode/
 .idea/
 *.swp
-*.swo
-*~
-
-# OS files
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# Logs and temporary files
+# Logs and temp
 *.log
 *.tmp
-temp/
-tmp/
 
-# uv
-*.egg-info/
-
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-debug/
-
-# My things
-handle64.exe
+# Local agent files
 CLAUDE.md
-website/
-.claude/
 AGENTS.md
+.claude/
 .agents/
+.remember/
 PLAN.md
+
+# Scratch PR body (not part of the project)
+.github/PR_BODY.md
