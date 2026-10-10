@@ -1,0 +1,48 @@
+{
+  "hardware": {
+    "machine_string": "4C4C4544-0000-1000-8000-B5C04F333333-BFEBFBFF000906EA-.ABC123.",
+    "machine_id": "f6cb899cf6755ee0cf32aa902a2e942e98640ec69108e24ad0cfeabd8a590712",
+    "key_hex": "4f5121be8cec6e831fd7d8001cf7073534df71b54604afcfd091eacceedef85e",
+    "package": {
+      "nonce": "en9URI4AaPZKCkJgiNHQzg==",
+      "tag": "H6dK2OBlbALPtQE/LrbYmA==",
+      "ciphertext": "dLkN/u1N/9LC71l5Ow6OPqM8nMPhBwleyQHKvtEopno79KXCVi46emKDbdqEUaHnRgR8CkTLkq0fR62zyE0wkOPtAIEkWfJCjDRP8aQMpXAuzWtaE8egOJpKHqkXoyNv5cvei8jENTywUOt3nkERLfKre+kfrd44z88X2/iafw/+Zh3NRuCDLSp5x+7Y8dl+ZqjSEnkctmojJx4lWamGkH+GOSscbnT27X/auArmjIESJm38eNUWnnJ7fAgnb+z+ioHBh+2TDtnXgUc="
+    }
+  },
+  "password": {
+    "password": "pässwörd-123",
+    "salt_config": "2b5ed62a3d8e872a102817f010d0d5a16800b90b853902d32f2b9510a232c288",
+    "key_hex": "bbf73152eb4d3e7c08ebe1763a45477ff3cc858cbc34da212a97cef93fb82f9f",
+    "package": {
+      "password_encoding": "utf-8",
+      "nonce": "TyJf8ngfZQ5sSoEQRma7MQ==",
+      "tag": "V2H8f9US0gNMS7Q4A6vSUg==",
+      "ciphertext": "VHnKjjfByDNwj4o2K6kHSVuR9gre8LtJGnRfyN7RSPZfqEDEuvJqJmnftFyxbSDM68bBtFLeUxs6rKY3rrne1mXAKJEkxtD0F8mZp1PESSl8Dex+pcJdPgsxaKoHPg2kvTKHZMPwXiEPIJ93rJCAPTM2iFOqdbvaaCvsIbU67qPXPHYavyGochNhUEkRiW6/T+1Pnf7SapNuNxPQwoqdzsKCdJZgsY9rSnPKLdbKDEZqcqPAm4osfNyN+v+GiqMUwbbErWl7SjjPHP8="
+    }
+  },
+  "password_legacy": {
+    "password": "pässwörd-123",
+    "salt_config": "2b5ed62a3d8e872a102817f010d0d5a16800b90b853902d32f2b9510a232c288",
+    "package": {
+      "nonce": "RTmH9q27Q6cH6l/napsItw==",
+      "tag": "pRx068BYMPg2pC930PXZsw==",
+      "ciphertext": "ggG2AmOwgsBNVWQZNiy51kN8sQ1JD/8R/aEh17eWEhH6N+Lx/2d6p/2BRili5mbt1CxQqcrMdIjlEVxa8AMxmK/JNO9dL9EJf4hGNovJNq3tP2h3cojbuctl5TCSS/lvKUk2YR1IkOA24A8mnVFLD4y/u3QLCMG1eUnzeORl3pXfkGpQRY980kLzoprdTUovLwLOz3y5rO+MIgy90Q=="
+    }
+  },
+  "backup": {
+    "password": "backup-pass-1",
+    "file": "evanovar_backup.json"
+  },
+  "payload": {
+    "accounts": {
+      "alice": {
+        "username": "alice",
+        "cookie": "_|WARNING:-test|abc",
+        "user_id": 1,
+        "note": "né",
+        "cookie_valid": true
+      }
+    },
+    "secure_settings": {}
+  }
+}
