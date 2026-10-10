@@ -36,7 +36,7 @@ impl Lockout {
 }
 
 /// Starts the server on a background thread.
-pub fn start(core: Arc<Core>, port: u16, token: String, expose_secrets: bool, max_auth_failures: u32) -> AppResult<ApiHandle> {
+pub fn start(core: Arc<Core>, port: u16, token: String, max_auth_failures: u32) -> AppResult<ApiHandle> {
     let server = Server::http(("127.0.0.1", port)).map_err(|e| {
         AppError::new("API_BIND_FAILED", "API Port In Use", format!("Could not bind 127.0.0.1:{port}.")).with_detail(e.to_string())
     })?;
@@ -49,7 +49,7 @@ pub fn start(core: Arc<Core>, port: u16, token: String, expose_secrets: bool, ma
             crate::log_info!("Local API listening on http://127.0.0.1:{port}");
             while !worker_stop.load(Ordering::SeqCst) {
                 match server.recv_timeout(Duration::from_millis(400)) {
-                    Ok(Some(request)) => handle(request, &core, &token, expose_secrets, &lockout),
+                    Ok(Some(request)) => handle(request, &core, &token, &lockout),
                     Ok(None) => continue,
                     Err(_) => break,
                 }
@@ -59,7 +59,7 @@ pub fn start(core: Arc<Core>, port: u16, token: String, expose_secrets: bool, ma
     Ok(ApiHandle { stop })
 }
 
-fn handle(mut request: Request, core: &Core, token: &str, expose: bool, lockout: &Mutex<Lockout>) {
+fn handle(mut request: Request, core: &Core, token: &str, lockout: &Mutex<Lockout>) {
     // Refuse browser-originated requests outright (defense in depth; we only bind loopback).
     if header(&request, "origin").is_some() {
         return respond(request, 403, json!({"error": "Requests with an Origin header are refused."}));
@@ -67,11 +67,18 @@ fn handle(mut request: Request, core: &Core, token: &str, expose: bool, lockout:
     if lockout.lock().unwrap_or_else(|p| p.into_inner()).locked() {
         return respond(request, 429, json!({"error": "Too many failed authentications. Try again shortly."}));
     }
-    let authorized = header(&request, "authorization").map(|h| h.trim_start_matches("Bearer ").trim() == token).unwrap_or(false);
-    if !authorized {
-        lockout.lock().unwrap_or_else(|p| p.into_inner()).failures.push(Instant::now());
-        return respond(request, 401, json!({"error": "Missing or invalid API token."}));
+    match header(&request, "authorization") {
+        Some(header) if constant_time_eq(header.trim_start_matches("Bearer ").trim(), token) => {}
+        Some(_) => {
+            // A token was presented but wrong: count it toward the lockout.
+            lockout.lock().unwrap_or_else(|p| p.into_inner()).failures.push(Instant::now());
+            return respond(request, 401, json!({"error": "Invalid API token."}));
+        }
+        // A missing token is not counted, so a drive-by page cannot lock out the owner.
+        None => return respond(request, 401, json!({"error": "Missing API token."})),
     }
+    // Read the exposure setting live so toggling it off takes effect without a restart.
+    let expose = core.settings().api_expose_secrets;
 
     let method = request.method().clone();
     let path = request.url().split('?').next().unwrap_or("").to_owned();
@@ -136,4 +143,17 @@ fn status_for(code: &str) -> u16 {
 fn respond(request: Request, status: u16, value: Value) {
     let header = Header::from_bytes(&b"Content-Type"[..], &b"application/json"[..]).unwrap();
     let _ = request.respond(Response::from_string(value.to_string()).with_status_code(status).with_header(header));
+}
+
+/// Constant-time comparison for the bearer token (no early return on mismatch).
+fn constant_time_eq(a: &str, b: &str) -> bool {
+    let (a, b) = (a.as_bytes(), b.as_bytes());
+    if a.len() != b.len() {
+        return false;
+    }
+    let mut diff = 0u8;
+    for (x, y) in a.iter().zip(b.iter()) {
+        diff |= x ^ y;
+    }
+    diff == 0
 }

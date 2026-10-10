@@ -57,9 +57,10 @@ impl Account {
             || (!self.alias.is_empty() && self.alias.eq_ignore_ascii_case(r))
     }
 
-    /// Copy without the cookie and password, safe to hand to scripts and AI tools.
+    /// Copy without secrets, safe to hand to scripts and AI tools. Clears the cookie,
+    /// the password, and the free-form `fields` (ic3w0lf stores PINs there).
     pub fn redacted(&self) -> Account {
-        Account { cookie: String::new(), password: String::new(), ..self.clone() }
+        Account { cookie: String::new(), password: String::new(), fields: BTreeMap::new(), ..self.clone() }
     }
 }
 
@@ -316,8 +317,10 @@ mod tests {
 
     #[test]
     fn redacted_hides_secrets() {
-        let a = Account { password: "p".into(), ..acc(1, "a") };
+        let mut fields = BTreeMap::new();
+        fields.insert("pin".to_string(), "1234".to_string());
+        let a = Account { password: "p".into(), fields, ..acc(1, "a") };
         let r = a.redacted();
-        assert!(r.cookie.is_empty() && r.password.is_empty());
+        assert!(r.cookie.is_empty() && r.password.is_empty() && r.fields.is_empty());
     }
 }

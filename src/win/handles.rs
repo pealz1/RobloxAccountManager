@@ -93,48 +93,62 @@ pub fn singleton_handles_clear(_pid: u32) -> bool {
 #[cfg(windows)]
 struct HandleEntry {
     pid: u32,
-    handle: u16,
+    handle: usize,
 }
 
-/// Enumerates every open handle on the system via NtQuerySystemInformation.
+/// Enumerates every open handle on the system.
+///
+/// Uses `SystemExtendedHandleInformation` (class 64), whose entry has a full-width
+/// `ULONG_PTR` process id and handle value — the older class-16 struct truncates
+/// the process id to 16 bits, so it misses every client whose PID exceeds 65535.
+/// Entries are read with `read_unaligned` because the backing buffer is a `Vec<u8>`.
 #[cfg(windows)]
 fn system_handles() -> Vec<HandleEntry> {
     use windows_sys::Win32::Foundation::{NTSTATUS, STATUS_INFO_LENGTH_MISMATCH};
-    // SystemHandleInformation = 16. The struct layout is the classic SYSTEM_HANDLE_INFORMATION.
-    const SYSTEM_HANDLE_INFORMATION: i32 = 16;
+    const SYSTEM_EXTENDED_HANDLE_INFORMATION: i32 = 64;
     unsafe extern "system" {
         fn NtQuerySystemInformation(class: i32, info: *mut core::ffi::c_void, len: u32, ret: *mut u32) -> NTSTATUS;
     }
+    // SYSTEM_HANDLE_TABLE_ENTRY_INFO_EX
     #[repr(C)]
-    struct SystemHandle {
-        process_id: u32,
-        object_type_number: u8,
-        flags: u8,
-        handle: u16,
+    #[derive(Clone, Copy)]
+    struct EntryEx {
         object: *mut core::ffi::c_void,
+        unique_process_id: usize,
+        handle_value: usize,
         granted_access: u32,
+        creator_back_trace_index: u16,
+        object_type_index: u16,
+        handle_attributes: u32,
+        reserved: u32,
     }
+    let header = 2 * std::mem::size_of::<usize>(); // NumberOfHandles + Reserved
+    let stride = std::mem::size_of::<EntryEx>();
     let mut size = 1 << 20;
-    // SAFETY: the buffer is grown until the call fits, then entries are read within bounds.
+    // SAFETY: the buffer grows until the call fits; every entry is read unaligned and
+    // strictly within `count`, which the kernel reports in the header.
     unsafe {
         loop {
             let mut buffer = vec![0u8; size];
             let mut needed = 0u32;
-            let status = NtQuerySystemInformation(SYSTEM_HANDLE_INFORMATION, buffer.as_mut_ptr() as *mut _, size as u32, &mut needed);
+            let status =
+                NtQuerySystemInformation(SYSTEM_EXTENDED_HANDLE_INFORMATION, buffer.as_mut_ptr() as *mut _, size as u32, &mut needed);
             if status == STATUS_INFO_LENGTH_MISMATCH {
                 size = (needed as usize).max(size * 2);
                 continue;
             }
-            if status < 0 {
+            if status < 0 || buffer.len() < header {
                 return Vec::new();
             }
-            let count = *(buffer.as_ptr() as *const u32) as usize;
-            // The array of entries begins after a pointer-sized count field.
-            let array = buffer.as_ptr().add(std::mem::size_of::<usize>()) as *const SystemHandle;
-            let mut out = Vec::with_capacity(count);
+            let count = (buffer.as_ptr() as *const usize).read_unaligned();
+            let mut out = Vec::with_capacity(count.min((buffer.len() - header) / stride));
             for i in 0..count {
-                let entry = &*array.add(i);
-                out.push(HandleEntry { pid: entry.process_id, handle: entry.handle });
+                let offset = header + i * stride;
+                if offset + stride > buffer.len() {
+                    break;
+                }
+                let entry = (buffer.as_ptr().add(offset) as *const EntryEx).read_unaligned();
+                out.push(HandleEntry { pid: entry.unique_process_id as u32, handle: entry.handle_value });
             }
             return out;
         }
@@ -180,6 +194,38 @@ unsafe fn object_name(handle: HANDLE) -> String {
     String::from_utf16_lossy(slice)
 }
 
+/// The kernel object's type name (e.g. "Mutant", "Event", "File"), via NtQueryObject.
+/// Querying the *name* of some handle types (notably synchronous named pipes with
+/// pending I/O) can block forever, so callers check the type first and only ask for
+/// the name of the mutex/event types the singleton objects actually use.
+#[cfg(windows)]
+unsafe fn object_type(handle: HANDLE) -> String {
+    use windows_sys::Win32::Foundation::NTSTATUS;
+    unsafe extern "system" {
+        fn NtQueryObject(handle: HANDLE, class: i32, info: *mut core::ffi::c_void, len: u32, ret: *mut u32) -> NTSTATUS;
+    }
+    #[repr(C)]
+    struct UnicodeString {
+        length: u16,
+        maximum_length: u16,
+        buffer: *mut u16,
+    }
+    let mut buffer = vec![0u8; 2048];
+    let mut needed = 0u32;
+    // ObjectTypeInformation = 2. The TypeName UNICODE_STRING is the first field.
+    // SAFETY: buffer is sized for a type name; we read within the reported length.
+    let status = unsafe { NtQueryObject(handle, 2, buffer.as_mut_ptr() as *mut _, buffer.len() as u32, &mut needed) };
+    if status < 0 {
+        return String::new();
+    }
+    let info = unsafe { (buffer.as_ptr() as *const UnicodeString).read_unaligned() };
+    if info.buffer.is_null() || info.length == 0 {
+        return String::new();
+    }
+    let slice = unsafe { std::slice::from_raw_parts(info.buffer, (info.length / 2) as usize) };
+    String::from_utf16_lossy(slice)
+}
+
 #[cfg(windows)]
 unsafe fn is_singleton(process: HANDLE, handle: HANDLE) -> bool {
     // SAFETY: the duplicated handle is closed before returning.
@@ -187,9 +233,16 @@ unsafe fn is_singleton(process: HANDLE, handle: HANDLE) -> bool {
         let Some(dup) = duplicate(process, handle, DUPLICATE_SAME_ACCESS) else {
             return false;
         };
-        let name = object_name(dup);
+        // Only Mutant/Event handles can be Roblox singletons; checking the type first
+        // keeps the name query off handle types that could hang it.
+        let kind = object_type(dup);
+        let is_sync_object = kind == "Mutant" || kind == "Event";
+        let matches = is_sync_object && {
+            let name = object_name(dup);
+            SINGLETON_NAMES.iter().any(|s| name.ends_with(s))
+        };
         CloseHandle(dup);
-        SINGLETON_NAMES.iter().any(|s| name.ends_with(s))
+        matches
     }
 }
 

@@ -40,7 +40,8 @@ pub fn list_roblox() -> Vec<RobloxProcess> {
     // SAFETY: snapshot is closed on every return path; entry is zeroed before use.
     unsafe {
         let snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-        if snapshot.is_null() {
+        // The snapshot API reports failure as INVALID_HANDLE_VALUE (-1), not null.
+        if snapshot.is_null() || snapshot == windows_sys::Win32::Foundation::INVALID_HANDLE_VALUE {
             return out;
         }
         let mut entry: PROCESSENTRY32W = std::mem::zeroed();

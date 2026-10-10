@@ -46,7 +46,8 @@ static REDACTIONS: LazyLock<Vec<(Regex, &'static str)>> = LazyLock::new(|| {
     [
         (r"(?i)(\.ROBLOSECURITY\s*=\s*)[^;\s'\x22]+", "${1}[REDACTED]"),
         (r#"(?i)(["']?(?:cookie|password|auth_ticket|token)["']?\s*[:=]\s*["'])[^"']+"#, "${1}[REDACTED]"),
-        (r"(?i)(privateServerLinkCode=|linkCode=|accessCode=)[^&\s'\x22]+", "${1}[REDACTED]"),
+        (r"(?i)(privateServerLinkCode=|linkCode=|accessCode=|[?&]code=)[^&\s'\x22]+", "${1}[REDACTED]"),
+        (r#"(?i)(["'](?:linkCode|accessCode|joinCode|privateServerLinkCode)["']\s*:\s*["'])[^"']+"#, "${1}[REDACTED]"),
         (r"(?i)(link code:\s*)[A-Za-z0-9_-]+", "${1}[REDACTED]"),
         (r"(?i)(gameinfo:)[^+\s]+", "${1}[REDACTED]"),
         (r"(?i)(Bearer\s+)[A-Za-z0-9._-]+", "${1}[REDACTED]"),

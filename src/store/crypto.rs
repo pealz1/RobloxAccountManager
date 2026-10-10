@@ -129,6 +129,12 @@ impl KdfParams {
         if self.alg != "argon2id" {
             return Err(AppError::new("KDF_UNSUPPORTED", "Unsupported Vault", "This vault uses an unknown key derivation."));
         }
+        // These come from the (possibly untrusted) vault/backup file. Reject absurd
+        // values so a crafted file can't drive Argon2 into an out-of-memory crash.
+        if self.m_kib > 1_048_576 || self.t > 16 || self.p > 16 || self.m_kib < 8 {
+            return Err(AppError::new("KDF_PARAMS_INVALID", "Unsupported Vault", "This vault's key settings are out of range.")
+                .with_detail(format!("m={} t={} p={}", self.m_kib, self.t, self.p)));
+        }
         let salt = unb64(&self.salt)?;
         argon2_raw(Algorithm::Argon2id, password.as_bytes(), &salt, self.m_kib, self.t, self.p)
     }
@@ -237,6 +243,13 @@ mod tests {
         let blob = nova_dpapi_protect(b"secret").unwrap();
         assert_eq!(nova_dpapi_unprotect(&blob).unwrap(), b"secret");
         assert!(dpapi_unprotect(&blob, b"wrong entropy").is_err());
+    }
+
+    #[test]
+    fn kdf_rejects_out_of_range_params() {
+        // A crafted backup/vault must not drive Argon2 into an OOM.
+        let bomb = KdfParams { m_kib: 4_000_000, ..KdfParams::fresh() };
+        assert_eq!(bomb.derive("pw").unwrap_err().code, "KDF_PARAMS_INVALID");
     }
 
     #[test]

@@ -25,7 +25,7 @@ pub fn start_http(core: Arc<Core>) -> Option<http::ApiHandle> {
         return None;
     }
     let token = ensure_token(&core);
-    match http::start(core, settings.api_port, token, settings.api_expose_secrets, settings.api_max_auth_failures) {
+    match http::start(core, settings.api_port, token, settings.api_max_auth_failures) {
         Ok(handle) => Some(handle),
         Err(err) => {
             crate::log_warn!("Local API did not start: {err}");

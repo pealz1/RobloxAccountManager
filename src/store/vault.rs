@@ -107,16 +107,29 @@ impl Vault {
 
     pub fn open(dir: &Path, password: Option<&str>) -> AppResult<Vault> {
         let path = Self::path_in(dir);
-        let (file, using_backup) = match read_file(&path) {
-            Ok(file) => (file, false),
-            Err(main_error) => match read_file(&backup_path(&path)) {
-                Ok(file) => {
-                    crate::log_warn!("vault.json could not be read; recovered from vault.json.bak");
-                    (file, true)
+        // Try the main file; on any failure that isn't the user's fault (a wrong
+        // password or a too-new file), fall back to vault.json.bak — this also
+        // recovers from a corrupt ciphertext, not only from invalid JSON.
+        match Self::open_file(&path, &path, password, false) {
+            Ok(vault) => Ok(vault),
+            // No password supplied, or a file from a newer version: the backup won't help.
+            Err(main_error) if main_error.code == "VAULT_LOCKED" || main_error.code == "VAULT_TOO_NEW" => Err(main_error),
+            // Anything else (corrupt JSON, damaged ciphertext, failed decrypt) may be
+            // recoverable from the backup. A password vault re-tries with the same
+            // password, so a genuinely wrong password still surfaces as PASSWORD_INVALID.
+            Err(main_error) => match Self::open_file(&backup_path(&path), &path, password, true) {
+                Ok(vault) => {
+                    crate::log_warn!("vault.json could not be opened ({}); recovered from vault.json.bak", main_error.code);
+                    Ok(vault)
                 }
-                Err(_) => return Err(main_error),
+                Err(_) => Err(main_error),
             },
-        };
+        }
+    }
+
+    /// Reads and decrypts one file, binding the vault to `live_path` for later writes.
+    fn open_file(read_path: &Path, live_path: &Path, password: Option<&str>, using_backup: bool) -> AppResult<Vault> {
+        let file = read_file(read_path)?;
         let key = match file.protection {
             Protection::None => Key::None,
             Protection::Windows => Key::Windows,
@@ -127,8 +140,8 @@ impl Vault {
             }
         };
         let data = decode(&file, &key)?;
-        let stamp = if using_backup { None } else { stamp_of(&path) };
-        Ok(Vault { path, key, data: Arc::new(data), stamp, revision: 1, using_backup })
+        let stamp = if using_backup { None } else { stamp_of(live_path) };
+        Ok(Vault { path: live_path.to_path_buf(), key, data: Arc::new(data), stamp, revision: 1, using_backup })
     }
 
     pub fn protection(&self) -> Protection {
@@ -201,7 +214,10 @@ impl Vault {
             return Err(err);
         }
         // The backup was written with the old key; replace it so it stays readable.
-        let _ = fs::copy(&self.path, backup_path(&self.path));
+        // If this fails the vault is still saved, but warn so a stale backup is noticed.
+        if let Err(err) = fs::copy(&self.path, backup_path(&self.path)) {
+            crate::log_warn!("Vault re-keyed, but the backup copy could not be refreshed: {err}");
+        }
         self.revision += 1;
         Ok(())
     }
@@ -348,6 +364,22 @@ mod tests {
         let recovered = Vault::open(dir.path(), None).unwrap();
         assert_eq!(recovered.cached().accounts.len(), 1);
         assert!(!fs::read_to_string(dir.path().join(FILE_NAME)).unwrap().contains("u1"));
+    }
+
+    #[test]
+    fn corrupt_ciphertext_falls_back_to_backup() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut vault = Vault::create(dir.path(), Protection::Windows, None).unwrap();
+        vault.update(|d| d.upsert(account(1))).unwrap();
+        vault.update(|d| d.upsert(account(2))).unwrap();
+        // Keep valid JSON but corrupt the encrypted blob (read_file still succeeds,
+        // decode fails) — this must still recover from the backup, not just error.
+        let path = dir.path().join(FILE_NAME);
+        let mut file: serde_json::Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        file["data"] = serde_json::json!("bm90LXZhbGlkLWNpcGhlcnRleHQ=");
+        fs::write(&path, serde_json::to_vec(&file).unwrap()).unwrap();
+        let recovered = Vault::open(dir.path(), None).unwrap();
+        assert_eq!(recovered.cached().accounts.len(), 1);
     }
 
     #[test]
