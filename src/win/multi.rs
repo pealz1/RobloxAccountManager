@@ -31,8 +31,12 @@ struct MutexHandle {
     handle: windows_sys::Win32::Foundation::HANDLE,
     owned: bool,
 }
+// SAFETY: a Windows HANDLE is a process-wide identifier; releasing/closing it from
+// another thread is sound, and access is serialised by the Core locks around the guard.
 #[cfg(windows)]
 unsafe impl Send for MutexHandle {}
+#[cfg(windows)]
+unsafe impl Sync for MutexHandle {}
 
 #[cfg(windows)]
 struct CookieLock {
@@ -40,6 +44,8 @@ struct CookieLock {
 }
 #[cfg(windows)]
 unsafe impl Send for CookieLock {}
+#[cfg(windows)]
+unsafe impl Sync for CookieLock {}
 
 impl MultiGuard {
     pub fn mode(&self) -> MultiMethod {
