@@ -33,11 +33,7 @@ pub fn write_json<T: serde::Serialize>(path: &Path, value: &T) -> std::io::Resul
 pub fn quarantine(path: &Path) {
     let target = PathBuf::from(format!("{}.corrupt", path.display()));
     if fs::rename(path, &target).is_ok() {
-        crate::log_warn!(
-            "{} could not be read and was moved to {}",
-            path.display(),
-            target.display()
-        );
+        crate::log_warn!("{} could not be read and was moved to {}", path.display(), target.display());
     }
 }
 

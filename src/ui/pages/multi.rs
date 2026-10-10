@@ -1,8 +1,8 @@
 //! The Multi Roblox page: enable multiple clients and manage running instances.
 
 use crate::store::settings::MultiMethod;
-use crate::ui::widgets;
 use crate::ui::NovaApp;
+use crate::ui::widgets;
 use eframe::egui::{self, RichText};
 
 impl NovaApp {
@@ -32,7 +32,10 @@ impl NovaApp {
 
             widgets::setting_row(ui, &palette, "Method", "Mutex works with no admin; Handle works with clients already open", |ui| {
                 egui::ComboBox::from_id_salt("multi-method")
-                    .selected_text(match settings.multi_method { MultiMethod::Mutex => "Mutex (default)", MultiMethod::Handle => "Handle (admin)" })
+                    .selected_text(match settings.multi_method {
+                        MultiMethod::Mutex => "Mutex (default)",
+                        MultiMethod::Handle => "Handle (admin)",
+                    })
                     .show_ui(ui, |ui| {
                         let mut changed = false;
                         changed |= ui.selectable_value(&mut settings.multi_method, MultiMethod::Mutex, "Mutex (default)").changed();
@@ -73,7 +76,13 @@ impl NovaApp {
 
         let instances = self.services.live.instances();
         if instances.is_empty() {
-            widgets::empty_state(ui, &palette, egui_phosphor::regular::STACK, "No Roblox clients running", "Launch accounts to see them here.");
+            widgets::empty_state(
+                ui,
+                &palette,
+                egui_phosphor::regular::STACK,
+                "No Roblox clients running",
+                "Launch accounts to see them here.",
+            );
             return;
         }
         let names: std::collections::HashMap<u64, String> = self.accounts.iter().map(|a| (a.user_id, a.label().to_owned())).collect();
@@ -88,7 +97,11 @@ impl NovaApp {
                         ui.label(RichText::new(name).size(13.0).strong().color(self.palette.text));
                         ui.label(RichText::new(format!("PID {}", inst.pid)).size(11.0).color(self.palette.faint));
                         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                            if ui.button(RichText::new(egui_phosphor::regular::X).color(self.palette.danger)).on_hover_text("Close").clicked() {
+                            if ui
+                                .button(RichText::new(egui_phosphor::regular::X).color(self.palette.danger))
+                                .on_hover_text("Close")
+                                .clicked()
+                            {
                                 close = Some(inst.pid);
                             }
                             if ui.button(egui_phosphor::regular::EYE_SLASH).on_hover_text("Hide").clicked() {

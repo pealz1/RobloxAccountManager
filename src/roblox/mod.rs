@@ -14,13 +14,8 @@ use std::time::{Duration, Instant};
 
 pub const USER_AGENT: &str = concat!("NovaRAM/", env!("CARGO_PKG_VERSION"));
 
-static AGENT: LazyLock<ureq::Agent> = LazyLock::new(|| {
-    ureq::Agent::config_builder()
-        .timeout_global(Some(Duration::from_secs(20)))
-        .user_agent(USER_AGENT)
-        .build()
-        .into()
-});
+static AGENT: LazyLock<ureq::Agent> =
+    LazyLock::new(|| ureq::Agent::config_builder().timeout_global(Some(Duration::from_secs(20))).user_agent(USER_AGENT).build().into());
 
 /// Global floor between unauthenticated username lookups, which Roblox rate-limits hard.
 static USERNAME_LOOKUP_GATE: LazyLock<Mutex<Option<Instant>>> = LazyLock::new(|| Mutex::new(None));
@@ -44,16 +39,29 @@ pub fn throttle(min_gap: Duration) {
 fn network_error(context: &str, err: &ureq::Error) -> AppError {
     use ureq::Error;
     match err {
-        Error::Timeout(_) => AppError::new("NETWORK_TIMEOUT", "Request Timed Out", "Roblox did not respond in time. Check your connection and try again.").retryable(),
-        Error::ConnectionFailed | Error::Io(_) => AppError::new("NETWORK_UNAVAILABLE", "Roblox Could Not Be Reached", "Check your internet connection and try again.").retryable(),
-        other => AppError::new("NETWORK_REQUEST_FAILED", "Request Failed", format!("{context} could not be completed.")).with_detail(other.to_string()).retryable(),
+        Error::Timeout(_) => {
+            AppError::new("NETWORK_TIMEOUT", "Request Timed Out", "Roblox did not respond in time. Check your connection and try again.")
+                .retryable()
+        }
+        Error::ConnectionFailed | Error::Io(_) => {
+            AppError::new("NETWORK_UNAVAILABLE", "Roblox Could Not Be Reached", "Check your internet connection and try again.").retryable()
+        }
+        other => AppError::new("NETWORK_REQUEST_FAILED", "Request Failed", format!("{context} could not be completed."))
+            .with_detail(other.to_string())
+            .retryable(),
     }
 }
 
 fn status_error(context: &str, status: u16) -> AppError {
     let base = match status {
-        401 | 403 => AppError::new("COOKIE_INVALID", "Account Cookie Invalid", "Roblox rejected this account cookie. Re-add or re-import the account."),
-        429 => AppError::new("RATE_LIMITED", "Roblox Rate Limit", "Roblox is rate-limiting requests. Wait a moment and try again.").retryable(),
+        401 | 403 => AppError::new(
+            "COOKIE_INVALID",
+            "Account Cookie Invalid",
+            "Roblox rejected this account cookie. Re-add or re-import the account.",
+        ),
+        429 => {
+            AppError::new("RATE_LIMITED", "Roblox Rate Limit", "Roblox is rate-limiting requests. Wait a moment and try again.").retryable()
+        }
         500..=599 => AppError::new("ROBLOX_SERVER_ERROR", "Roblox Error", "Roblox returned a server error. Try again shortly.").retryable(),
         _ => AppError::new("ROBLOX_REQUEST_FAILED", "Roblox Request Failed", format!("{context} failed.")),
     };
@@ -76,15 +84,15 @@ pub fn get_json<T: DeserializeOwned>(context: &str, url: &str, cookie: Option<&s
     if status != 200 {
         return Err(status_error(context, status));
     }
-    response.body_mut().read_json().map_err(|e| AppError::new("ROBLOX_BAD_RESPONSE", "Unexpected Response", format!("{context} returned data Nova could not read.")).with_detail(e.to_string()))
+    response.body_mut().read_json().map_err(|e| {
+        AppError::new("ROBLOX_BAD_RESPONSE", "Unexpected Response", format!("{context} returned data Nova could not read."))
+            .with_detail(e.to_string())
+    })
 }
 
 /// Fetches an `x-csrf-token` for authenticated POSTs by hitting the logout endpoint.
 pub fn csrf_token(cookie: &str) -> AppResult<String> {
-    let result = agent()
-        .post("https://auth.roblox.com/v2/logout")
-        .header("Cookie", cookie_header(cookie))
-        .send_empty();
+    let result = agent().post("https://auth.roblox.com/v2/logout").header("Cookie", cookie_header(cookie)).send_empty();
     let response = match result {
         Ok(response) => response,
         Err(ureq::Error::StatusCode(_)) => {
@@ -93,13 +101,7 @@ pub fn csrf_token(cookie: &str) -> AppResult<String> {
         }
         Err(err) => return Err(network_error("CSRF token request", &err)),
     };
-    response
-        .headers()
-        .get("x-csrf-token")
-        .and_then(|v| v.to_str().ok())
-        .map(str::to_owned)
-        .map(Ok)
-        .unwrap_or_else(|| retry_csrf(cookie))
+    response.headers().get("x-csrf-token").and_then(|v| v.to_str().ok()).map(str::to_owned).map(Ok).unwrap_or_else(|| retry_csrf(cookie))
 }
 
 fn retry_csrf(cookie: &str) -> AppResult<String> {
@@ -111,12 +113,9 @@ fn retry_csrf(cookie: &str) -> AppResult<String> {
         .build()
         .send_empty()
         .map_err(|e| network_error("CSRF token request", &e))?;
-    response
-        .headers()
-        .get("x-csrf-token")
-        .and_then(|v| v.to_str().ok())
-        .map(str::to_owned)
-        .ok_or_else(|| AppError::new("CSRF_FAILED", "Could Not Authorize", "Roblox did not return a security token. Try again.").retryable())
+    response.headers().get("x-csrf-token").and_then(|v| v.to_str().ok()).map(str::to_owned).ok_or_else(|| {
+        AppError::new("CSRF_FAILED", "Could Not Authorize", "Roblox did not return a security token. Try again.").retryable()
+    })
 }
 
 /// Authenticated POST with automatic CSRF retry. Returns the raw response body.
@@ -133,17 +132,21 @@ pub fn post_json<B: serde::Serialize>(context: &str, url: &str, cookie: &str, bo
             .send_json(body)
             .map_err(|e| network_error(context, &e))?;
         let status = response.status().as_u16();
-        if (status == 403 || status == 400) && attempt == 0 {
-            if let Some(fresh) = response.headers().get("x-csrf-token").and_then(|v| v.to_str().ok()) {
-                token = fresh.to_owned();
-                continue;
-            }
+        if (status == 403 || status == 400)
+            && attempt == 0
+            && let Some(fresh) = response.headers().get("x-csrf-token").and_then(|v| v.to_str().ok())
+        {
+            token = fresh.to_owned();
+            continue;
         }
         if status != 200 {
             return Err(status_error(context, status));
         }
         let mut response = response;
-        return response.body_mut().read_json().map_err(|e| AppError::new("ROBLOX_BAD_RESPONSE", "Unexpected Response", format!("{context} returned data Nova could not read.")).with_detail(e.to_string()));
+        return response.body_mut().read_json().map_err(|e| {
+            AppError::new("ROBLOX_BAD_RESPONSE", "Unexpected Response", format!("{context} returned data Nova could not read."))
+                .with_detail(e.to_string())
+        });
     }
     Err(status_error(context, 403))
 }

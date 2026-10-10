@@ -37,7 +37,11 @@ impl Core {
             return Err(AppError::new("COOKIE_MISSING", "Account Cookie Missing", format!("{} has no saved cookie.", account.label())));
         }
         if account.cookie_status == CookieStatus::Invalid {
-            return Err(AppError::new("COOKIE_INVALID", "Account Cookie Invalid", format!("{}'s cookie is invalid. Re-add the account.", account.label())));
+            return Err(AppError::new(
+                "COOKIE_INVALID",
+                "Account Cookie Invalid",
+                format!("{}'s cookie is invalid. Re-add the account.", account.label()),
+            ));
         }
         let settings = self.settings();
         let launched = launch::launch(&account.cookie, request, settings.launcher, &settings.custom_launcher_path)?;
@@ -51,11 +55,11 @@ impl Core {
         if settings.track_server_history && !launched.place_id.is_empty() {
             let _ = self.record_launch_visit(&account, &launched, request);
         }
-        if !launched.place_id.is_empty() {
-            if let Ok(place_id) = launched.place_id.parse::<u64>() {
-                let name = games::game_name(place_id).unwrap_or_default();
-                let _ = self.record_recent_game(place_id, &name, &request.private_server);
-            }
+        if !launched.place_id.is_empty()
+            && let Ok(place_id) = launched.place_id.parse::<u64>()
+        {
+            let name = games::game_name(place_id).unwrap_or_default();
+            let _ = self.record_recent_game(place_id, &name, &request.private_server);
         }
         Ok(launched)
     }
@@ -114,7 +118,10 @@ impl Core {
 
     /// Joins the game a target user is currently in (visible to the first account).
     pub fn join_user(&self, references: &[String], target: &str) -> AppResult<BatchResult> {
-        let first = references.first().and_then(|r| self.account(r)).ok_or_else(|| AppError::invalid("NO_ACCOUNT", "Select an account to join with."))?;
+        let first = references
+            .first()
+            .and_then(|r| self.account(r))
+            .ok_or_else(|| AppError::invalid("NO_ACCOUNT", "Select an account to join with."))?;
         let target_id = if target.chars().all(|c| c.is_ascii_digit()) {
             target.parse().map_err(|_| AppError::invalid("TARGET_INVALID", "Enter a username or user id."))?
         } else {
@@ -125,7 +132,11 @@ impl Core {
             return Err(AppError::new("TARGET_NOT_IN_GAME", "User Not In A Game", format!("{target} is not in a game right now.")));
         }
         let place_id = presence.place_id.or(presence.root_place_id).ok_or_else(|| {
-            AppError::new("TARGET_PLACE_HIDDEN", "Join Not Allowed", format!("{target}'s game cannot be joined (their join setting is restricted)."))
+            AppError::new(
+                "TARGET_PLACE_HIDDEN",
+                "Join Not Allowed",
+                format!("{target}'s game cannot be joined (their join setting is restricted)."),
+            )
         })?;
         let request = LaunchRequest { place_id: place_id.to_string(), job_id: presence.job_id, ..Default::default() };
         Ok(self.launch_batch(references, &request))

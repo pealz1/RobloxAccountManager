@@ -65,11 +65,7 @@ impl AvatarCache {
 
     pub fn with_dir(dir: PathBuf, cache_days: u32) -> AvatarCache {
         let _ = std::fs::create_dir_all(&dir);
-        AvatarCache {
-            dir,
-            max_age: Duration::from_secs(cache_days as u64 * 86_400),
-            memory: Mutex::new(HashMap::new()),
-        }
+        AvatarCache { dir, max_age: Duration::from_secs(cache_days as u64 * 86_400), memory: Mutex::new(HashMap::new()) }
     }
 
     fn path(&self, user_id: u64) -> PathBuf {
@@ -130,11 +126,11 @@ impl AvatarCache {
     /// Removes cached avatars for ids no longer in use.
     pub fn prune(&self, keep: &std::collections::HashSet<u64>) {
         for entry in std::fs::read_dir(&self.dir).into_iter().flatten().flatten() {
-            if let Some(id) = entry.path().file_stem().and_then(|s| s.to_str()).and_then(|s| s.parse::<u64>().ok()) {
-                if !keep.contains(&id) {
-                    let _ = std::fs::remove_file(entry.path());
-                    self.memory.lock().unwrap_or_else(|p| p.into_inner()).remove(&id);
-                }
+            if let Some(id) = entry.path().file_stem().and_then(|s| s.to_str()).and_then(|s| s.parse::<u64>().ok())
+                && !keep.contains(&id)
+            {
+                let _ = std::fs::remove_file(entry.path());
+                self.memory.lock().unwrap_or_else(|p| p.into_inner()).remove(&id);
             }
         }
     }

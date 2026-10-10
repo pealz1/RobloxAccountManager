@@ -42,11 +42,7 @@ pub struct Account {
 impl Account {
     /// Stable identity: the Roblox user id when known, otherwise the lowercase username.
     pub fn key(&self) -> String {
-        if self.user_id > 0 {
-            self.user_id.to_string()
-        } else {
-            self.username.to_lowercase()
-        }
+        if self.user_id > 0 { self.user_id.to_string() } else { self.username.to_lowercase() }
     }
 
     pub fn label(&self) -> &str {
@@ -187,10 +183,7 @@ pub struct VaultData {
 impl VaultData {
     pub fn find(&self, reference: &str) -> Option<&Account> {
         let r = reference.trim();
-        self.accounts
-            .iter()
-            .find(|a| a.key() == r)
-            .or_else(|| self.accounts.iter().find(|a| a.matches_ref(r)))
+        self.accounts.iter().find(|a| a.key() == r).or_else(|| self.accounts.iter().find(|a| a.matches_ref(r)))
     }
 
     pub fn find_mut(&mut self, reference: &str) -> Option<&mut Account> {
@@ -200,10 +193,7 @@ impl VaultData {
 
     pub fn index_of(&self, reference: &str) -> Option<usize> {
         let r = reference.trim();
-        self.accounts
-            .iter()
-            .position(|a| a.key() == r)
-            .or_else(|| self.accounts.iter().position(|a| a.matches_ref(r)))
+        self.accounts.iter().position(|a| a.key() == r).or_else(|| self.accounts.iter().position(|a| a.matches_ref(r)))
     }
 
     /// Adds or updates an account. Existing notes, groups, aliases and passwords are kept
@@ -254,9 +244,7 @@ impl VaultData {
     }
 
     pub fn push_visit(&mut self, visit: ServerVisit) {
-        let duplicate = self.server_history.iter().any(|v| {
-            v.job_id == visit.job_id && v.user_id == visit.user_id && v.at == visit.at
-        });
+        let duplicate = self.server_history.iter().any(|v| v.job_id == visit.job_id && v.user_id == visit.user_id && v.at == visit.at);
         if !duplicate {
             self.server_history.push(visit);
             self.server_history.sort_by_key(|v| v.at);
@@ -281,8 +269,7 @@ pub fn move_account(order: &[String], moved: &str, before: Option<&str>, visible
         Some(b) => result.iter().position(|k| k == b).unwrap_or(result.len()),
         None => visible
             .iter()
-            .filter(|k| result.contains(k))
-            .last()
+            .rfind(|k| result.contains(k))
             .and_then(|last| result.iter().position(|k| k == last))
             .map_or(result.len(), |i| i + 1),
     };

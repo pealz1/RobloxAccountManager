@@ -1,7 +1,7 @@
 //! The Anti-AFK page: configure the keep-alive action and toggle it on.
 
-use crate::ui::widgets;
 use crate::ui::NovaApp;
+use crate::ui::widgets;
 use eframe::egui::{self, RichText};
 
 const ACTIONS: [&str; 10] = ["space", "w", "a", "s", "d", "up", "down", "left", "right", "shift"];
@@ -9,7 +9,11 @@ const ACTIONS: [&str; 10] = ["space", "w", "a", "s", "d", "up", "down", "left", 
 impl NovaApp {
     pub(in crate::ui) fn page_anti_afk(&mut self, ui: &mut egui::Ui) {
         ui.label(RichText::new("Anti-AFK").size(22.0).strong().color(self.palette.text));
-        ui.label(RichText::new("Sends an input to each Roblox window on a timer so sessions aren't kicked for inactivity.").size(12.0).color(self.palette.muted));
+        ui.label(
+            RichText::new("Sends an input to each Roblox window on a timer so sessions aren't kicked for inactivity.")
+                .size(12.0)
+                .color(self.palette.muted),
+        );
         ui.add_space(12.0);
 
         let palette = self.palette;

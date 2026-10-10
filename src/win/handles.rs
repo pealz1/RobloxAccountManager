@@ -79,10 +79,7 @@ pub fn singleton_handles_clear(pid: u32) -> bool {
         if process.is_null() {
             return false;
         }
-        let clear = !system_handles()
-            .into_iter()
-            .filter(|h| h.pid == pid)
-            .any(|entry| is_singleton(process, entry.handle as HANDLE));
+        let clear = !system_handles().into_iter().filter(|h| h.pid == pid).any(|entry| is_singleton(process, entry.handle as HANDLE));
         CloseHandle(process);
         clear
     }

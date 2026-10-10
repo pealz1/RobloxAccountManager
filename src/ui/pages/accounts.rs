@@ -72,7 +72,12 @@ impl NovaApp {
                         }
                     });
                 }
-                if ui.add(egui::Button::new(RichText::new(egui_phosphor::regular::PLUS).color(self.palette.muted)).fill(Color32::TRANSPARENT)).clicked() {
+                if ui
+                    .add(
+                        egui::Button::new(RichText::new(egui_phosphor::regular::PLUS).color(self.palette.muted)).fill(Color32::TRANSPARENT),
+                    )
+                    .clicked()
+                {
                     self.group_input = "New Group".into();
                     self.renaming_group = Some((String::new(), "New Group".into()));
                 }
@@ -82,7 +87,8 @@ impl NovaApp {
     }
 
     fn group_tab(&self, ui: &mut egui::Ui, label: &str, selected: bool) -> egui::Response {
-        let (fg, bg) = if selected { (self.palette.accent_text, self.palette.accent) } else { (self.palette.muted, self.palette.surface_alt) };
+        let (fg, bg) =
+            if selected { (self.palette.accent_text, self.palette.accent) } else { (self.palette.muted, self.palette.surface_alt) };
         ui.add(egui::Button::new(RichText::new(label).size(12.5).color(fg)).fill(bg).corner_radius(14.0))
     }
 
@@ -101,7 +107,11 @@ impl NovaApp {
                 ui.horizontal(|ui| {
                     if widgets::primary_button(ui, &self.palette, "Save").clicked() {
                         if let Some((_, name)) = self.renaming_group.clone() {
-                            let result = if original.is_empty() { self.core.create_group(&name).map(|_| ()) } else { self.core.rename_group(&original, &name).map(|_| ()) };
+                            let result = if original.is_empty() {
+                                self.core.create_group(&name).map(|_| ())
+                            } else {
+                                self.core.rename_group(&original, &name).map(|_| ())
+                            };
                             match result {
                                 Ok(()) => self.reload_accounts(),
                                 Err(err) => self.show_toast(err.message, true),
@@ -123,9 +133,21 @@ impl NovaApp {
         let accounts = self.visible_accounts();
         if accounts.is_empty() {
             if self.accounts.is_empty() {
-                widgets::empty_state(ui, &self.palette, egui_phosphor::regular::USERS_THREE, "No accounts yet", "Add one with the button above.");
+                widgets::empty_state(
+                    ui,
+                    &self.palette,
+                    egui_phosphor::regular::USERS_THREE,
+                    "No accounts yet",
+                    "Add one with the button above.",
+                );
             } else {
-                widgets::empty_state(ui, &self.palette, egui_phosphor::regular::MAGNIFYING_GLASS, "No matches", "Try a different search or group.");
+                widgets::empty_state(
+                    ui,
+                    &self.palette,
+                    egui_phosphor::regular::MAGNIFYING_GLASS,
+                    "No matches",
+                    "Try a different search or group.",
+                );
             }
             return;
         }
@@ -156,13 +178,30 @@ impl NovaApp {
                     // Avatar
                     let (rect, _) = ui.allocate_exact_size(Vec2::splat(34.0), Sense::hover());
                     if let Some(texture) = &texture {
-                        ui.painter().image(texture.id(), rect, egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)), Color32::WHITE);
+                        ui.painter().image(
+                            texture.id(),
+                            rect,
+                            egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
+                            Color32::WHITE,
+                        );
                     } else {
                         ui.painter().rect_filled(rect, 17.0, self.palette.surface_alt);
-                        ui.painter().text(rect.center(), egui::Align2::CENTER_CENTER, account.username.chars().next().unwrap_or('?').to_uppercase().to_string(), egui::FontId::proportional(15.0), self.palette.muted);
+                        ui.painter().text(
+                            rect.center(),
+                            egui::Align2::CENTER_CENTER,
+                            account.username.chars().next().unwrap_or('?').to_uppercase().to_string(),
+                            egui::FontId::proportional(15.0),
+                            self.palette.muted,
+                        );
                     }
                     // Status dot over the avatar
-                    let dot = if activity.running { self.palette.in_game } else if account.cookie_status == CookieStatus::Valid { self.palette.online.gamma_multiply(0.5) } else { self.palette.faint };
+                    let dot = if activity.running {
+                        self.palette.in_game
+                    } else if account.cookie_status == CookieStatus::Valid {
+                        self.palette.online.gamma_multiply(0.5)
+                    } else {
+                        self.palette.faint
+                    };
                     ui.painter().circle_filled(rect.right_bottom() - Vec2::splat(4.0), 4.5, dot);
 
                     ui.add_space(4.0);
@@ -180,7 +219,13 @@ impl NovaApp {
                             if !account.group.is_empty() {
                                 widgets::chip(ui, &account.group, self.palette.muted, self.palette.surface_alt);
                             }
-                            let sub = if !account.note.is_empty() { account.note.clone() } else if account.user_id > 0 { format!("ID {}", account.user_id) } else { String::new() };
+                            let sub = if !account.note.is_empty() {
+                                account.note.clone()
+                            } else if account.user_id > 0 {
+                                format!("ID {}", account.user_id)
+                            } else {
+                                String::new()
+                            };
                             if !sub.is_empty() {
                                 ui.label(RichText::new(sub).size(11.0).color(self.palette.faint));
                             }
@@ -189,7 +234,11 @@ impl NovaApp {
 
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         if activity.running {
-                            let ram = if activity.ram_mb >= 1024.0 { format!("{:.1} GB", activity.ram_mb / 1024.0) } else { format!("{:.0} MB", activity.ram_mb) };
+                            let ram = if activity.ram_mb >= 1024.0 {
+                                format!("{:.1} GB", activity.ram_mb / 1024.0)
+                            } else {
+                                format!("{:.0} MB", activity.ram_mb)
+                            };
                             ui.label(RichText::new(ram).size(11.0).color(self.palette.muted));
                             widgets::status_dot(ui, self.palette.in_game);
                         }
@@ -273,12 +322,10 @@ impl NovaApp {
             ui.close();
         }
         if count == 1 {
-            if self.core.settings().allow_copy_secrets {
-                if ui.button(format!("{}  Copy cookie", egui_phosphor::regular::COPY)).clicked() {
-                    ui.ctx().copy_text(account.cookie.clone());
-                    self.show_toast("Cookie copied", false);
-                    ui.close();
-                }
+            if self.core.settings().allow_copy_secrets && ui.button(format!("{}  Copy cookie", egui_phosphor::regular::COPY)).clicked() {
+                ui.ctx().copy_text(account.cookie.clone());
+                self.show_toast("Cookie copied", false);
+                ui.close();
             }
             if ui.button(format!("{}  Refresh cookie status", egui_phosphor::regular::ARROWS_CLOCKWISE)).clicked() {
                 let k = key.clone();
@@ -324,7 +371,9 @@ impl NovaApp {
             ui.add_space(8.0);
 
             ui.label(RichText::new("Place ID").size(11.0).color(self.palette.muted));
-            let place_changed = ui.add(egui::TextEdit::singleline(&mut self.launch.place_id).hint_text("e.g. 606849621").desired_width(f32::INFINITY)).changed();
+            let place_changed = ui
+                .add(egui::TextEdit::singleline(&mut self.launch.place_id).hint_text("e.g. 606849621").desired_width(f32::INFINITY))
+                .changed();
             if place_changed {
                 self.launch.game_name.clear();
             }
@@ -336,7 +385,11 @@ impl NovaApp {
 
             ui.add_space(6.0);
             ui.label(RichText::new("Private server link").size(11.0).color(self.palette.muted));
-            ui.add(egui::TextEdit::singleline(&mut self.launch.private_server).hint_text("VIP / share link or code").desired_width(f32::INFINITY));
+            ui.add(
+                egui::TextEdit::singleline(&mut self.launch.private_server)
+                    .hint_text("VIP / share link or code")
+                    .desired_width(f32::INFINITY),
+            );
 
             ui.add_space(6.0);
             ui.label(RichText::new("Job ID (optional)").size(11.0).color(self.palette.muted));
@@ -348,7 +401,17 @@ impl NovaApp {
             ui.add_space(4.0);
 
             let full = ui.available_width();
-            if ui.add(egui::Button::new(RichText::new(format!("{}  Join", egui_phosphor::regular::PLAY)).color(self.palette.accent_text).strong()).fill(self.palette.accent).corner_radius(8.0).min_size(Vec2::new(full, 34.0))).clicked() {
+            if ui
+                .add(
+                    egui::Button::new(
+                        RichText::new(format!("{}  Join", egui_phosphor::regular::PLAY)).color(self.palette.accent_text).strong(),
+                    )
+                    .fill(self.palette.accent)
+                    .corner_radius(8.0)
+                    .min_size(Vec2::new(full, 34.0)),
+                )
+                .clicked()
+            {
                 self.launch_selected(self.current_request(), "Joined");
             }
             ui.add_space(6.0);
@@ -371,7 +434,11 @@ impl NovaApp {
             ui.add_space(12.0);
             ui.label(RichText::new("Join a user").size(11.0).color(self.palette.muted));
             ui.horizontal(|ui| {
-                ui.add(egui::TextEdit::singleline(&mut self.launch.join_user).hint_text("username / id").desired_width(ui.available_width() - 44.0));
+                ui.add(
+                    egui::TextEdit::singleline(&mut self.launch.join_user)
+                        .hint_text("username / id")
+                        .desired_width(ui.available_width() - 44.0),
+                );
                 if ui.button(egui_phosphor::regular::ARROW_RIGHT).clicked() {
                     self.join_user_action();
                 }
@@ -408,7 +475,11 @@ impl NovaApp {
         ui.add_space(10.0);
         ui.label(RichText::new("Recent").size(11.0).color(self.palette.muted));
         for game in recents.into_iter().take(5) {
-            let label = format!("{}{}", if game.private_server.is_empty() { "" } else { "[P] " }, if game.name.is_empty() { game.place_id.to_string() } else { game.name.clone() });
+            let label = format!(
+                "{}{}",
+                if game.private_server.is_empty() { "" } else { "[P] " },
+                if game.name.is_empty() { game.place_id.to_string() } else { game.name.clone() }
+            );
             if ui.add(egui::Button::new(RichText::new(label).size(12.0).color(self.palette.text)).fill(Color32::TRANSPARENT)).clicked() {
                 self.launch.place_id = game.place_id.to_string();
                 self.launch.private_server = game.private_server.clone();
@@ -456,9 +527,11 @@ impl NovaApp {
             self.show_toast("Select at least one account", true);
             return;
         }
-        self.sender.spawn(Arc::clone(&self.core), Arc::clone(&self.services), move |core, _| match core.join_small_server(&keys, place_id) {
-            Ok(result) => Msg::Toast(result.summary("Joined"), !result.ok()),
-            Err(err) => Msg::Toast(err.message, true),
+        self.sender.spawn(Arc::clone(&self.core), Arc::clone(&self.services), move |core, _| {
+            match core.join_small_server(&keys, place_id) {
+                Ok(result) => Msg::Toast(result.summary("Joined"), !result.ok()),
+                Err(err) => Msg::Toast(err.message, true),
+            }
         });
     }
 

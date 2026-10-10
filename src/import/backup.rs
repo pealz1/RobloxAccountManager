@@ -28,7 +28,10 @@ struct NovaBackup {
 /// Writes a password-protected backup of the given accounts.
 pub fn export(accounts: &[Account], path: &Path, password: &str) -> AppResult<usize> {
     if password.len() < MIN_PASSWORD_LEN {
-        return Err(AppError::invalid("BACKUP_PASSWORD_SHORT", format!("Use a backup password with at least {MIN_PASSWORD_LEN} characters.")));
+        return Err(AppError::invalid(
+            "BACKUP_PASSWORD_SHORT",
+            format!("Use a backup password with at least {MIN_PASSWORD_LEN} characters."),
+        ));
     }
     if accounts.is_empty() {
         return Err(AppError::new("BACKUP_EMPTY", "Nothing To Export", "There are no accounts to export."));
@@ -41,13 +44,7 @@ pub fn export(accounts: &[Account], path: &Path, password: &str) -> AppResult<us
     }))
     .map_err(|e| AppError::unexpected("backup encode", e))?;
     let (nonce, ct) = crypto::aes_encrypt(&key, &plain)?;
-    let backup = NovaBackup {
-        format: NOVA_FORMAT.into(),
-        version: 1,
-        kdf,
-        nonce: crypto::b64(&nonce),
-        data: crypto::b64(&ct),
-    };
+    let backup = NovaBackup { format: NOVA_FORMAT.into(), version: 1, kdf, nonce: crypto::b64(&nonce), data: crypto::b64(&ct) };
     crate::store::atomic::write_json(path, &backup).map_err(|e| AppError::io("Writing the backup", &e))?;
     Ok(accounts.len())
 }
@@ -62,8 +59,7 @@ pub fn import(path: &Path, password: &str) -> AppResult<ImportBatch> {
         NOVA_FORMAT => {
             let backup: NovaBackup = serde_json::from_value(document).map_err(|e| malformed(&e.to_string()))?;
             let key = backup.kdf.derive(password)?;
-            crypto::aes_decrypt(&key, &crypto::unb64(&backup.nonce)?, &crypto::unb64(&backup.data)?)
-                .map_err(|_| wrong_password())?
+            crypto::aes_decrypt(&key, &crypto::unb64(&backup.nonce)?, &crypto::unb64(&backup.data)?).map_err(|_| wrong_password())?
         }
         EVANOVAR_FORMAT => decrypt_evanovar_backup(&document, password)?,
         _ => return Err(AppError::new("BACKUP_INVALID", "Not A Backup", "This file is not an account backup Nova can read.")),

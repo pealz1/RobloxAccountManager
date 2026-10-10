@@ -31,7 +31,8 @@ struct GameEntry {
 
 /// Resolves a place id to its game name (empty when unknown).
 pub fn game_name(place_id: u64) -> AppResult<String> {
-    let universe: UniverseResponse = get_json("Game lookup", &format!("https://apis.roblox.com/universes/v1/places/{place_id}/universe"), None)?;
+    let universe: UniverseResponse =
+        get_json("Game lookup", &format!("https://apis.roblox.com/universes/v1/places/{place_id}/universe"), None)?;
     let Some(universe_id) = universe.universe_id else {
         return Ok(String::new());
     };
@@ -75,10 +76,8 @@ pub fn search(query: &str, session_id: &str, page_token: &str) -> AppResult<(Vec
     if query.is_empty() {
         return Ok((Vec::new(), String::new()));
     }
-    let mut url = format!(
-        "https://apis.roblox.com/search-api/omni-search?searchQuery={}&sessionId={session_id}&pageType=all",
-        urlencode(query)
-    );
+    let mut url =
+        format!("https://apis.roblox.com/search-api/omni-search?searchQuery={}&sessionId={session_id}&pageType=all", urlencode(query));
     if !page_token.is_empty() {
         url.push_str(&format!("&pageToken={}", urlencode(page_token)));
     }
@@ -127,7 +126,9 @@ pub fn smallest_server(place_id: u64) -> AppResult<String> {
         .filter(|s| !s.id.is_empty() && s.playing < s.max_players.max(1))
         .min_by_key(|s| s.playing)
         .map(|s| s.id)
-        .ok_or_else(|| AppError::new("NO_JOINABLE_SERVER", "No Available Server", "No joinable public server was found for this game.").retryable())
+        .ok_or_else(|| {
+            AppError::new("NO_JOINABLE_SERVER", "No Available Server", "No joinable public server was found for this game.").retryable()
+        })
 }
 
 fn urlencode(text: &str) -> String {

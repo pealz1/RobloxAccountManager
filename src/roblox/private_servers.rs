@@ -8,9 +8,8 @@ use std::sync::LazyLock;
 
 use regex::Regex;
 
-static VIP_RE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"roblox\.com/games/(\d+)/[^?#]*\?[^#]*privateServerLinkCode=([A-Za-z0-9]+)").unwrap()
-});
+static VIP_RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"roblox\.com/games/(\d+)/[^?#]*\?[^#]*privateServerLinkCode=([A-Za-z0-9]+)").unwrap());
 static SHARE_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"roblox\.com/share[^?#]*[?&]code=([A-Za-z0-9]+)").unwrap());
 
 /// Turns a VIP URL, share URL or `games/<id>?privateServerLinkCode=` link into
@@ -28,10 +27,7 @@ pub fn resolve_share_link(input: &str, cookie: Option<&str>) -> AppResult<(Optio
     };
     // Share links need resolving through Roblox.
     let cookie = cookie.unwrap_or_default();
-    for payload in [
-        serde_json::json!({ "linkId": code, "linkType": "Server" }),
-        serde_json::json!({ "code": code, "type": "Server" }),
-    ] {
+    for payload in [serde_json::json!({ "linkId": code, "linkType": "Server" }), serde_json::json!({ "code": code, "type": "Server" })] {
         let Ok(value) = post_json("Share link", "https://apis.roblox.com/sharelinks/v1/resolve-link", cookie, &payload) else {
             continue;
         };
@@ -45,10 +41,8 @@ pub fn resolve_share_link(input: &str, cookie: Option<&str>) -> AppResult<(Optio
 fn read_resolved(value: &Value) -> Option<(String, String)> {
     let text = value.to_string();
     let place = Regex::new(r#""placeId"\s*:\s*(\d+)"#).ok()?.captures(&text)?[1].to_owned();
-    let link = Regex::new(r#""(?:linkCode|privateServerLinkCode|accessCode)"\s*:\s*"([A-Za-z0-9_\-]+)""#)
-        .ok()?
-        .captures(&text)?[1]
-        .to_owned();
+    let link =
+        Regex::new(r#""(?:linkCode|privateServerLinkCode|accessCode)"\s*:\s*"([A-Za-z0-9_\-]+)""#).ok()?.captures(&text)?[1].to_owned();
     Some((place, link))
 }
 
@@ -74,7 +68,9 @@ pub fn list_servers(cookie: &str, user_id: u64, place_id: Option<u64>) -> AppRes
     for _ in 0..100 {
         let url = match place_id {
             Some(pid) => format!("https://games.roblox.com/v1/games/{pid}/private-servers?limit=10&cursor={cursor}"),
-            None => format!("https://games.roblox.com/v1/private-servers/my-private-servers?itemsPerPage=10&privateServersTab=MyPrivateServers&cursor={cursor}"),
+            None => format!(
+                "https://games.roblox.com/v1/private-servers/my-private-servers?itemsPerPage=10&privateServersTab=MyPrivateServers&cursor={cursor}"
+            ),
         };
         let page: Page = get_json("Private servers", &url, Some(cookie))?;
         for entry in &page.data {
@@ -139,9 +135,7 @@ fn build_link(detail: &Value, entry: &Value, place_id: u64) -> String {
         }
     }
     let code = [detail, entry].iter().find_map(|v| {
-        ["joinCode", "linkCode", "privateServerLinkCode"]
-            .iter()
-            .find_map(|k| v.get(*k).and_then(Value::as_str).filter(|s| !s.is_empty()))
+        ["joinCode", "linkCode", "privateServerLinkCode"].iter().find_map(|k| v.get(*k).and_then(Value::as_str).filter(|s| !s.is_empty()))
     });
     match code {
         Some(code) if place_id > 0 => format!("https://www.roblox.com/games/{place_id}?privateServerLinkCode={code}"),
@@ -185,7 +179,7 @@ fn patch_vip(cookie: &str, vip_server_id: u64) -> AppResult<Value> {
         .config()
         .http_status_as_error(false)
         .build()
-        .send_json(&serde_json::json!({ "newJoinCode": true }))
+        .send_json(serde_json::json!({ "newJoinCode": true }))
         .map_err(|e| network_error("Private server link", &e))?;
     let status = response.status().as_u16();
     if status != 200 {

@@ -23,18 +23,21 @@ pub fn is_password_locked(bytes: &[u8]) -> bool {
 pub fn read_accounts(path: &Path, password: Option<&str>) -> AppResult<ImportBatch> {
     let bytes = std::fs::read(path).map_err(|e| AppError::io("Reading AccountData.json", &e))?;
     let plain = decrypt(&bytes, password)?;
-    let value: Value = serde_json::from_slice(&plain)
-        .map_err(|e| AppError::new("IC3_INVALID", "Not An ic3w0lf File", "This is not a valid Roblox Account Manager file.").with_detail(e.to_string()))?;
+    let value: Value = serde_json::from_slice(&plain).map_err(|e| {
+        AppError::new("IC3_INVALID", "Not An ic3w0lf File", "This is not a valid Roblox Account Manager file.").with_detail(e.to_string())
+    })?;
     Ok(batch_from_array(&value))
 }
 
 fn decrypt(bytes: &[u8], password: Option<&str>) -> AppResult<Vec<u8>> {
     if is_password_locked(bytes) {
-        let password = password.ok_or_else(|| AppError::new(
-            "IC3_LOCKED",
-            "Password Needed",
-            "This Roblox Account Manager file is password-locked. Enter its password to import.",
-        ))?;
+        let password = password.ok_or_else(|| {
+            AppError::new(
+                "IC3_LOCKED",
+                "Password Needed",
+                "This Roblox Account Manager file is password-locked. Enter its password to import.",
+            )
+        })?;
         return crypto::ic3_password_decrypt(bytes, password);
     }
     // Plain JSON?
@@ -93,7 +96,8 @@ fn batch_from_array(value: &Value) -> ImportBatch {
 mod tests {
     use super::*;
 
-    const COOKIE: &str = "_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|TOK";
+    const COOKIE: &str =
+        "_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|TOK";
 
     #[test]
     fn reads_plain_json_array() {

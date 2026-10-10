@@ -2,8 +2,8 @@
 //! keep the session from being kicked for inactivity.
 
 use crate::store::settings::AntiAfk;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 /// A running Anti-AFK loop; drop or `stop` to end it.
@@ -26,10 +26,7 @@ impl Drop for AntiAfkHandle {
 pub fn start(config: AntiAfk) -> AntiAfkHandle {
     let stop = Arc::new(AtomicBool::new(false));
     let body_stop = Arc::clone(&stop);
-    std::thread::Builder::new()
-        .name("anti-afk".into())
-        .spawn(move || run(config, &body_stop))
-        .ok();
+    std::thread::Builder::new().name("anti-afk".into()).spawn(move || run(config, &body_stop)).ok();
     AntiAfkHandle { stop }
 }
 
@@ -86,9 +83,7 @@ fn virtual_key(action: &str) -> Option<u32> {
         "right" => 0x27,
         "shift" => 0x10,
         "ctrl" => 0x11,
-        single if single.len() == 1 && single.as_bytes()[0].is_ascii_alphanumeric() => {
-            single.as_bytes()[0].to_ascii_uppercase() as u32
-        }
+        single if single.len() == 1 && single.as_bytes()[0].is_ascii_alphanumeric() => single.as_bytes()[0].to_ascii_uppercase() as u32,
         f if f.starts_with('f') && f[1..].parse::<u32>().is_ok() => {
             let n = f[1..].parse::<u32>().unwrap();
             if (1..=12).contains(&n) { 0x70 + n - 1 } else { return None }

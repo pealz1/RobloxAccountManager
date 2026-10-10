@@ -40,9 +40,7 @@ struct Sink {
     recent: VecDeque<LogLine>,
 }
 
-static SINK: LazyLock<Mutex<Sink>> = LazyLock::new(|| {
-    Mutex::new(Sink { file: None, path: None, recent: VecDeque::new() })
-});
+static SINK: LazyLock<Mutex<Sink>> = LazyLock::new(|| Mutex::new(Sink { file: None, path: None, recent: VecDeque::new() }));
 
 static REDACTIONS: LazyLock<Vec<(Regex, &'static str)>> = LazyLock::new(|| {
     [
@@ -62,9 +60,7 @@ static REDACTIONS: LazyLock<Vec<(Regex, &'static str)>> = LazyLock::new(|| {
 
 /// Removes cookies, passwords, link codes and tokens from text before it is stored.
 pub fn redact(text: &str) -> String {
-    REDACTIONS
-        .iter()
-        .fold(text.to_owned(), |acc, (re, rep)| re.replace_all(&acc, *rep).into_owned())
+    REDACTIONS.iter().fold(text.to_owned(), |acc, (re, rep)| re.replace_all(&acc, *rep).into_owned())
 }
 
 /// Opens the session log, prunes old logs and installs the crash hook.
@@ -122,7 +118,7 @@ pub fn prune(keep: usize, protect: &PathBuf) {
             .filter(|e| e.file_name().to_string_lossy().starts_with(prefix))
             .filter_map(|e| Some((e.metadata().ok()?.modified().ok()?, e.path())))
             .collect();
-        files.sort_by(|a, b| b.0.cmp(&a.0));
+        files.sort_by_key(|(modified, _)| std::cmp::Reverse(*modified));
         for (_, path) in files.into_iter().skip(keep.max(1)) {
             if &path != protect {
                 let _ = fs::remove_file(path);

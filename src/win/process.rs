@@ -70,9 +70,7 @@ pub fn list_roblox() -> Vec<RobloxProcess> {
 
 #[cfg(windows)]
 fn creation_time(pid: u32) -> Option<u64> {
-    use windows_sys::Win32::System::Threading::{
-        GetProcessTimes, OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION,
-    };
+    use windows_sys::Win32::System::Threading::{GetProcessTimes, OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION};
     // SAFETY: handle is closed before returning; times are plain out-params.
     unsafe {
         let handle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid);

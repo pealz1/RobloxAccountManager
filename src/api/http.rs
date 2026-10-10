@@ -4,7 +4,7 @@
 use super::commands;
 use crate::core::Core;
 use crate::error::{AppError, AppResult};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};

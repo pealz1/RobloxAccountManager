@@ -22,7 +22,7 @@ pub fn is_startup_enabled() -> bool {
 fn read_run_value() -> Option<String> {
     use std::os::windows::ffi::OsStrExt;
     use windows_sys::Win32::Foundation::ERROR_SUCCESS;
-    use windows_sys::Win32::System::Registry::{HKEY_CURRENT_USER, RegCloseKey, RegOpenKeyExW, RegQueryValueExW, KEY_READ};
+    use windows_sys::Win32::System::Registry::{HKEY_CURRENT_USER, KEY_READ, RegCloseKey, RegOpenKeyExW, RegQueryValueExW};
     let key_wide: Vec<u16> = std::ffi::OsStr::new(RUN_KEY).encode_wide().chain(std::iter::once(0)).collect();
     let name_wide: Vec<u16> = std::ffi::OsStr::new(RUN_VALUE).encode_wide().chain(std::iter::once(0)).collect();
     // SAFETY: key handle is closed; the size probe runs before the read.
@@ -55,7 +55,7 @@ pub fn set_startup(enabled: bool) -> AppResult<()> {
     use std::os::windows::ffi::OsStrExt;
     use windows_sys::Win32::Foundation::ERROR_SUCCESS;
     use windows_sys::Win32::System::Registry::{
-        HKEY_CURRENT_USER, REG_SZ, RegCloseKey, RegDeleteValueW, RegOpenKeyExW, RegSetValueExW, KEY_WRITE,
+        HKEY_CURRENT_USER, KEY_WRITE, REG_SZ, RegCloseKey, RegDeleteValueW, RegOpenKeyExW, RegSetValueExW,
     };
     let key_wide: Vec<u16> = std::ffi::OsStr::new(RUN_KEY).encode_wide().chain(std::iter::once(0)).collect();
     let name_wide: Vec<u16> = std::ffi::OsStr::new(RUN_VALUE).encode_wide().chain(std::iter::once(0)).collect();
@@ -77,7 +77,8 @@ pub fn set_startup(enabled: bool) -> AppResult<()> {
         if result == ERROR_SUCCESS {
             Ok(())
         } else {
-            Err(AppError::new("STARTUP_FAILED", "Could Not Change Startup", "Windows refused the startup change.").with_detail(format!("code {result}")))
+            Err(AppError::new("STARTUP_FAILED", "Could Not Change Startup", "Windows refused the startup change.")
+                .with_detail(format!("code {result}")))
         }
     }
 }
@@ -136,7 +137,9 @@ fn run_powershell(script: &str) -> AppResult<()> {
         .args(["-NoProfile", "-NonInteractive", "-Command", script])
         .creation_flags(CREATE_NO_WINDOW)
         .output()
-        .map_err(|e| AppError::new("SHORTCUT_FAILED", "Shortcut Failed", "PowerShell could not create the shortcut.").with_detail(e.to_string()))?;
+        .map_err(|e| {
+            AppError::new("SHORTCUT_FAILED", "Shortcut Failed", "PowerShell could not create the shortcut.").with_detail(e.to_string())
+        })?;
     if output.status.success() {
         Ok(())
     } else {

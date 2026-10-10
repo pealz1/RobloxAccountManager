@@ -3,8 +3,8 @@
 
 use crate::roblox::launch::LaunchRequest;
 use crate::store::model::ServerVisit;
-use crate::ui::widgets;
 use crate::ui::NovaApp;
+use crate::ui::widgets;
 use eframe::egui::{self, RichText};
 
 impl NovaApp {
@@ -16,7 +16,11 @@ impl NovaApp {
                 if widgets::ghost_button(ui, &self.palette, &format!("{} Refresh", egui_phosphor::regular::ARROWS_CLOCKWISE)).clicked() {
                     crate::services::history::sync(&self.core);
                 }
-                ui.add(egui::TextEdit::singleline(&mut self.search).hint_text(format!("{}  Filter", egui_phosphor::regular::MAGNIFYING_GLASS)).desired_width(200.0));
+                ui.add(
+                    egui::TextEdit::singleline(&mut self.search)
+                        .hint_text(format!("{}  Filter", egui_phosphor::regular::MAGNIFYING_GLASS))
+                        .desired_width(200.0),
+                );
             });
         });
         ui.add_space(10.0);
@@ -36,7 +40,13 @@ impl NovaApp {
             .collect();
 
         if filtered.is_empty() {
-            widgets::empty_state(ui, &self.palette, egui_phosphor::regular::GLOBE_HEMISPHERE_WEST, "No server history yet", "Launch a game and it will appear here.");
+            widgets::empty_state(
+                ui,
+                &self.palette,
+                egui_phosphor::regular::GLOBE_HEMISPHERE_WEST,
+                "No server history yet",
+                "Launch a game and it will appear here.",
+            );
             return;
         }
 
@@ -47,20 +57,31 @@ impl NovaApp {
                 widgets::card(ui, &self.palette, |ui| {
                     ui.horizontal(|ui| {
                         ui.vertical(|ui| {
-                            let title = self.game_names.get(&visit.place_id).cloned().filter(|n| !n.is_empty()).unwrap_or_else(|| format!("Place {}", visit.place_id));
+                            let title = self
+                                .game_names
+                                .get(&visit.place_id)
+                                .cloned()
+                                .filter(|n| !n.is_empty())
+                                .unwrap_or_else(|| format!("Place {}", visit.place_id));
                             ui.label(RichText::new(title).size(14.0).strong().color(self.palette.text));
                             ui.horizontal(|ui| {
                                 if !visit.username.is_empty() {
                                     widgets::chip(ui, &visit.username, self.palette.muted, self.palette.surface_alt);
                                 }
                                 if let Some(at) = visit.at {
-                                    ui.label(RichText::new(at.with_timezone(&chrono::Local).format("%b %d, %H:%M").to_string()).size(11.0).color(self.palette.faint));
+                                    ui.label(
+                                        RichText::new(at.with_timezone(&chrono::Local).format("%b %d, %H:%M").to_string())
+                                            .size(11.0)
+                                            .color(self.palette.faint),
+                                    );
                                 }
                                 if !visit.server_ip.is_empty() {
                                     ui.label(RichText::new(&visit.server_ip).size(11.0).color(self.palette.faint));
                                 }
                             });
-                            ui.label(RichText::new(format!("Job {}", short_job(&visit.job_id))).size(10.0).monospace().color(self.palette.faint));
+                            ui.label(
+                                RichText::new(format!("Job {}", short_job(&visit.job_id))).size(10.0).monospace().color(self.palette.faint),
+                            );
                         });
                         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                             if widgets::ghost_button(ui, &self.palette, &format!("{} Rejoin", egui_phosphor::regular::PLAY)).clicked() {

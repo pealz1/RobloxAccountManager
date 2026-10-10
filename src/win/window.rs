@@ -32,7 +32,7 @@ struct Collector {
 #[cfg(windows)]
 unsafe extern "system" fn enum_proc(hwnd: HWND, lparam: LPARAM) -> i32 {
     use windows_sys::Win32::UI::WindowsAndMessaging::{
-        GetWindow, GetWindowRect, GetWindowTextLengthW, GetWindowThreadProcessId, IsWindowVisible, GW_OWNER,
+        GW_OWNER, GetWindow, GetWindowRect, GetWindowTextLengthW, GetWindowThreadProcessId, IsWindowVisible,
     };
     // SAFETY: lparam is a &mut Collector passed by the caller below for this enumeration.
     let collector = unsafe { &mut *(lparam as *mut Collector) };
@@ -83,13 +83,11 @@ pub fn main_window(pid: u32) -> Option<WindowInfo> {
 
 #[cfg(windows)]
 pub fn set_title(hwnd: isize, title: &str) -> bool {
-    use windows_sys::Win32::UI::WindowsAndMessaging::{SendMessageTimeoutW, SMTO_ABORTIFHUNG, WM_SETTEXT};
+    use windows_sys::Win32::UI::WindowsAndMessaging::{SMTO_ABORTIFHUNG, SendMessageTimeoutW, WM_SETTEXT};
     let wide: Vec<u16> = title.encode_utf16().chain(std::iter::once(0)).collect();
     let mut result = 0usize;
     // SAFETY: the wide buffer is null-terminated and lives for the call.
-    let delivered = unsafe {
-        SendMessageTimeoutW(hwnd as HWND, WM_SETTEXT, 0, wide.as_ptr() as isize, SMTO_ABORTIFHUNG, 250, &mut result)
-    };
+    let delivered = unsafe { SendMessageTimeoutW(hwnd as HWND, WM_SETTEXT, 0, wide.as_ptr() as isize, SMTO_ABORTIFHUNG, 250, &mut result) };
     delivered != 0
 }
 
@@ -120,7 +118,7 @@ pub fn title(_hwnd: isize) -> String {
 
 #[cfg(windows)]
 pub fn show(hwnd: isize, visible: bool) {
-    use windows_sys::Win32::UI::WindowsAndMessaging::{ShowWindowAsync, SW_HIDE, SW_SHOW};
+    use windows_sys::Win32::UI::WindowsAndMessaging::{SW_HIDE, SW_SHOW, ShowWindowAsync};
     // SAFETY: plain window message, no pointers.
     unsafe {
         ShowWindowAsync(hwnd as HWND, if visible { SW_SHOW } else { SW_HIDE });

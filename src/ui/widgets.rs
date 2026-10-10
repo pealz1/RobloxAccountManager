@@ -11,7 +11,12 @@ pub fn primary_button(ui: &mut Ui, palette: &Palette, label: &str) -> Response {
 
 /// A quiet, outlined button for secondary actions.
 pub fn ghost_button(ui: &mut Ui, palette: &Palette, label: &str) -> Response {
-    ui.add(egui::Button::new(RichText::new(label).color(palette.text)).fill(Color32::TRANSPARENT).stroke(Stroke::new(1.0, palette.line)).corner_radius(8.0))
+    ui.add(
+        egui::Button::new(RichText::new(label).color(palette.text))
+            .fill(Color32::TRANSPARENT)
+            .stroke(Stroke::new(1.0, palette.line))
+            .corner_radius(8.0),
+    )
 }
 
 /// A small coloured pill, e.g. a group name or a status label.

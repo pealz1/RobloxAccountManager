@@ -3,9 +3,9 @@
 
 use crate::store::settings::{Launcher, Settings, ThemeMode, UpdateChannel, WindowTitleMode};
 use crate::store::vault::Protection;
+use crate::ui::NovaApp;
 use crate::ui::task::Msg;
 use crate::ui::{theme, widgets};
-use crate::ui::NovaApp;
 use eframe::egui::{self, RichText};
 use std::sync::Arc;
 
@@ -91,11 +91,11 @@ impl NovaApp {
             });
             if s.launcher == Launcher::Custom {
                 widgets::setting_row(ui, &palette, "Custom launcher", "", |ui| {
-                    if ui.button(egui_phosphor::regular::FOLDER_OPEN).clicked() {
-                        if let Some(path) = rfd::FileDialog::new().add_filter("Executable", &["exe"]).pick_file() {
-                            s.custom_launcher_path = path.display().to_string();
-                            dirty = true;
-                        }
+                    if ui.button(egui_phosphor::regular::FOLDER_OPEN).clicked()
+                        && let Some(path) = rfd::FileDialog::new().add_filter("Executable", &["exe"]).pick_file()
+                    {
+                        s.custom_launcher_path = path.display().to_string();
+                        dirty = true;
                     }
                     ui.add(egui::TextEdit::singleline(&mut s.custom_launcher_path).desired_width(200.0));
                 });
@@ -141,7 +141,8 @@ impl NovaApp {
             });
             widgets::setting_row(ui, &palette, "Window title", "", |ui| {
                 egui::ComboBox::from_id_salt("title-mode").selected_text(format!("{:?}", s.window_title_mode)).show_ui(ui, |ui| {
-                    for mode in [WindowTitleMode::Username, WindowTitleMode::Alias, WindowTitleMode::Note, WindowTitleMode::UsernameAndNote] {
+                    for mode in [WindowTitleMode::Username, WindowTitleMode::Alias, WindowTitleMode::Note, WindowTitleMode::UsernameAndNote]
+                    {
                         dirty |= ui.selectable_value(&mut s.window_title_mode, mode, format!("{mode:?}")).changed();
                     }
                 });
@@ -268,7 +269,11 @@ impl NovaApp {
             let token = self.core.secret("api_token").unwrap_or_default();
             ui.horizontal(|ui| {
                 ui.label(RichText::new("Token").size(12.0).color(self.palette.muted));
-                let shown = if token.is_empty() { "(none — generate one)".to_owned() } else { format!("{}…{}", &token[..token.len().min(6)], &token[token.len().saturating_sub(4)..]) };
+                let shown = if token.is_empty() {
+                    "(none — generate one)".to_owned()
+                } else {
+                    format!("{}…{}", &token[..token.len().min(6)], &token[token.len().saturating_sub(4)..])
+                };
                 ui.label(RichText::new(shown).monospace().size(11.0).color(self.palette.text));
                 if ui.button(egui_phosphor::regular::COPY).on_hover_text("Copy token").clicked() {
                     ui.ctx().copy_text(token.clone());
@@ -292,7 +297,11 @@ impl NovaApp {
         widgets::card(ui, &palette, |ui| {
             widgets::section(ui, &palette, "About");
             ui.label(RichText::new(format!("{} v{}", crate::APP_NAME, crate::VERSION)).strong().color(self.palette.text));
-            ui.label(RichText::new("A fast Rust rewrite, forked from Evanovar RAM, which drew on ic3w0lf's original Roblox Account Manager.").size(11.0).color(self.palette.muted));
+            ui.label(
+                RichText::new("A fast Rust rewrite, forked from Evanovar RAM, which drew on ic3w0lf's original Roblox Account Manager.")
+                    .size(11.0)
+                    .color(self.palette.muted),
+            );
             ui.label(RichText::new("Licensed under GPL-3.0.").size(11.0).color(self.palette.faint));
         });
     }
@@ -334,7 +343,10 @@ impl NovaApp {
     }
 
     fn export_backup(&mut self) {
-        let Some(path) = rfd::FileDialog::new().set_file_name("accounts.novabackup").add_filter("Nova backup", &["novabackup"]).save_file() else { return };
+        let Some(path) = rfd::FileDialog::new().set_file_name("accounts.novabackup").add_filter("Nova backup", &["novabackup"]).save_file()
+        else {
+            return;
+        };
         // Ask for a password via the scratch field is clumsy; use a fixed prompt modal instead.
         let password = self.group_input.clone();
         if password.len() < 8 {

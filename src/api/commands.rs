@@ -7,7 +7,7 @@
 use crate::core::Core;
 use crate::error::{AppError, AppResult};
 use crate::roblox::launch::LaunchRequest;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 /// A tool the API/MCP exposes.
 pub struct Tool {
@@ -20,52 +20,102 @@ pub struct Tool {
 
 pub fn tools() -> Vec<Tool> {
     vec![
-        Tool { name: "list_accounts", destructive: false,
+        Tool {
+            name: "list_accounts",
+            destructive: false,
             description: "List saved accounts (username, id, group, note, status, running/RAM). Cookies are never included unless the server is configured to expose secrets.",
-            schema: json!({"type":"object","properties":{"group":{"type":"string","description":"Only accounts in this group"},"search":{"type":"string","description":"Filter by username, note, group or id"}}}) },
-        Tool { name: "get_account", destructive: false,
+            schema: json!({"type":"object","properties":{"group":{"type":"string","description":"Only accounts in this group"},"search":{"type":"string","description":"Filter by username, note, group or id"}}}),
+        },
+        Tool {
+            name: "get_account",
+            destructive: false,
             description: "Get one account by username or user id.",
-            schema: json!({"type":"object","properties":{"account":{"type":"string"}},"required":["account"]}) },
-        Tool { name: "add_account", destructive: false,
+            schema: json!({"type":"object","properties":{"account":{"type":"string"}},"required":["account"]}),
+        },
+        Tool {
+            name: "add_account",
+            destructive: false,
             description: "Add an account from a .ROBLOSECURITY cookie. Resolves its username and id from Roblox.",
-            schema: json!({"type":"object","properties":{"cookie":{"type":"string"}},"required":["cookie"]}) },
-        Tool { name: "import_accounts", destructive: false,
+            schema: json!({"type":"object","properties":{"cookie":{"type":"string"}},"required":["cookie"]}),
+        },
+        Tool {
+            name: "import_accounts",
+            destructive: false,
             description: "Import accounts from pasted text (cookies, user:pass lines, CSV or JSON). Only cookie accounts are added; user:pass lines are reported as needing a browser sign-in.",
-            schema: json!({"type":"object","properties":{"text":{"type":"string"}},"required":["text"]}) },
-        Tool { name: "delete_account", destructive: true,
+            schema: json!({"type":"object","properties":{"text":{"type":"string"}},"required":["text"]}),
+        },
+        Tool {
+            name: "delete_account",
+            destructive: true,
             description: "Remove an account from Nova (does not affect the Roblox account). Requires confirm:true.",
-            schema: json!({"type":"object","properties":{"account":{"type":"string"},"confirm":{"type":"boolean"}},"required":["account","confirm"]}) },
-        Tool { name: "launch", destructive: false,
+            schema: json!({"type":"object","properties":{"account":{"type":"string"},"confirm":{"type":"boolean"}},"required":["account","confirm"]}),
+        },
+        Tool {
+            name: "launch",
+            destructive: false,
             description: "Launch one or more accounts into a game. Provide place_id and/or private_server and/or job_id. Omit all for the Roblox home page.",
-            schema: json!({"type":"object","properties":{"accounts":{"type":"array","items":{"type":"string"}},"place_id":{"type":"string"},"private_server":{"type":"string"},"job_id":{"type":"string"}},"required":["accounts"]}) },
-        Tool { name: "join_user", destructive: false,
+            schema: json!({"type":"object","properties":{"accounts":{"type":"array","items":{"type":"string"}},"place_id":{"type":"string"},"private_server":{"type":"string"},"job_id":{"type":"string"}},"required":["accounts"]}),
+        },
+        Tool {
+            name: "join_user",
+            destructive: false,
             description: "Launch accounts into the game a target user is currently in.",
-            schema: json!({"type":"object","properties":{"accounts":{"type":"array","items":{"type":"string"}},"target":{"type":"string"}},"required":["accounts","target"]}) },
-        Tool { name: "join_small_server", destructive: false,
+            schema: json!({"type":"object","properties":{"accounts":{"type":"array","items":{"type":"string"}},"target":{"type":"string"}},"required":["accounts","target"]}),
+        },
+        Tool {
+            name: "join_small_server",
+            destructive: false,
             description: "Launch accounts into the emptiest public server of a place.",
-            schema: json!({"type":"object","properties":{"accounts":{"type":"array","items":{"type":"string"}},"place_id":{"type":"string"}},"required":["accounts","place_id"]}) },
-        Tool { name: "set_note", destructive: false,
+            schema: json!({"type":"object","properties":{"accounts":{"type":"array","items":{"type":"string"}},"place_id":{"type":"string"}},"required":["accounts","place_id"]}),
+        },
+        Tool {
+            name: "set_note",
+            destructive: false,
             description: "Set an account's note.",
-            schema: json!({"type":"object","properties":{"account":{"type":"string"},"note":{"type":"string"}},"required":["account","note"]}) },
-        Tool { name: "set_group", destructive: false,
+            schema: json!({"type":"object","properties":{"account":{"type":"string"},"note":{"type":"string"}},"required":["account","note"]}),
+        },
+        Tool {
+            name: "set_group",
+            destructive: false,
             description: "Move an account to a group (empty string clears it).",
-            schema: json!({"type":"object","properties":{"account":{"type":"string"},"group":{"type":"string"}},"required":["account","group"]}) },
-        Tool { name: "list_groups", destructive: false, description: "List group names.", schema: json!({"type":"object","properties":{}}) },
-        Tool { name: "list_servers", destructive: false,
+            schema: json!({"type":"object","properties":{"account":{"type":"string"},"group":{"type":"string"}},"required":["account","group"]}),
+        },
+        Tool {
+            name: "list_groups",
+            destructive: false,
+            description: "List group names.",
+            schema: json!({"type":"object","properties":{}}),
+        },
+        Tool {
+            name: "list_servers",
+            destructive: false,
             description: "Recent servers each account has joined (from the Roblox logs).",
-            schema: json!({"type":"object","properties":{"account":{"type":"string","description":"Only this account"},"limit":{"type":"integer"}}}) },
-        Tool { name: "list_private_servers", destructive: false,
+            schema: json!({"type":"object","properties":{"account":{"type":"string","description":"Only this account"},"limit":{"type":"integer"}}}),
+        },
+        Tool {
+            name: "list_private_servers",
+            destructive: false,
             description: "List the private servers owned by an account.",
-            schema: json!({"type":"object","properties":{"account":{"type":"string"},"place_id":{"type":"string"}},"required":["account"]}) },
-        Tool { name: "multi_roblox", destructive: false,
+            schema: json!({"type":"object","properties":{"account":{"type":"string"},"place_id":{"type":"string"}},"required":["account"]}),
+        },
+        Tool {
+            name: "multi_roblox",
+            destructive: false,
             description: "Control multi-instance support. action is 'enable', 'disable' or 'status'.",
-            schema: json!({"type":"object","properties":{"action":{"type":"string","enum":["enable","disable","status"]}},"required":["action"]}) },
-        Tool { name: "kill_all_roblox", destructive: true,
+            schema: json!({"type":"object","properties":{"action":{"type":"string","enum":["enable","disable","status"]}},"required":["action"]}),
+        },
+        Tool {
+            name: "kill_all_roblox",
+            destructive: true,
             description: "Close every running Roblox client. Requires confirm:true.",
-            schema: json!({"type":"object","properties":{"confirm":{"type":"boolean"}},"required":["confirm"]}) },
-        Tool { name: "status", destructive: false,
+            schema: json!({"type":"object","properties":{"confirm":{"type":"boolean"}},"required":["confirm"]}),
+        },
+        Tool {
+            name: "status",
+            destructive: false,
             description: "App status: version, account count, running clients, multi-instance and update state.",
-            schema: json!({"type":"object","properties":{}}) },
+            schema: json!({"type":"object","properties":{}}),
+        },
     ]
 }
 
@@ -114,7 +164,8 @@ pub fn dispatch(core: &Core, name: &str, args: &Value, expose_secrets: bool) -> 
         })),
         "list_accounts" => {
             let group = args.get("group").and_then(Value::as_str);
-            let terms: Vec<String> = args.get("search").and_then(Value::as_str).unwrap_or("").to_lowercase().split_whitespace().map(str::to_owned).collect();
+            let terms: Vec<String> =
+                args.get("search").and_then(Value::as_str).unwrap_or("").to_lowercase().split_whitespace().map(str::to_owned).collect();
             let accounts: Vec<Value> = core
                 .accounts()
                 .into_iter()
@@ -139,17 +190,20 @@ pub fn dispatch(core: &Core, name: &str, args: &Value, expose_secrets: bool) -> 
             let batch = crate::import::parse_text(str_arg(args, "text")?);
             let mut resolved = batch.clone();
             for a in &mut resolved.accounts {
-                if a.has_cookie() && a.user_id == 0 {
-                    if let Ok(id) = crate::roblox::account::whoami(&a.cookie) {
-                        a.user_id = id.user_id;
-                        if a.username.is_empty() {
-                            a.username = id.username;
-                        }
+                if a.has_cookie()
+                    && a.user_id == 0
+                    && let Ok(id) = crate::roblox::account::whoami(&a.cookie)
+                {
+                    a.user_id = id.user_id;
+                    if a.username.is_empty() {
+                        a.username = id.username;
                     }
                 }
             }
             let outcome = core.apply_import(&resolved)?;
-            Ok(json!({ "added": outcome.added, "updated": outcome.updated, "skipped": outcome.skipped, "need_sign_in": outcome.need_sign_in }))
+            Ok(
+                json!({ "added": outcome.added, "updated": outcome.updated, "skipped": outcome.skipped, "need_sign_in": outcome.need_sign_in }),
+            )
         }
         "delete_account" => {
             require_confirm(args)?;
@@ -171,7 +225,8 @@ pub fn dispatch(core: &Core, name: &str, args: &Value, expose_secrets: bool) -> 
             Ok(batch_json(&result))
         }
         "join_small_server" => {
-            let place = str_arg(args, "place_id")?.parse().map_err(|_| AppError::invalid("PLACE_ID_INVALID", "place_id must be numeric."))?;
+            let place =
+                str_arg(args, "place_id")?.parse().map_err(|_| AppError::invalid("PLACE_ID_INVALID", "place_id must be numeric."))?;
             let result = core.join_small_server(&str_list(args, "accounts"), place)?;
             Ok(batch_json(&result))
         }

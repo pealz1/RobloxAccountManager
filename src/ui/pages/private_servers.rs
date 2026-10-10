@@ -3,9 +3,9 @@
 
 use crate::error::AppResult;
 use crate::store::model::SavedPrivateServer;
+use crate::ui::NovaApp;
 use crate::ui::task::Msg;
 use crate::ui::widgets;
-use crate::ui::NovaApp;
 use eframe::egui::{self, RichText};
 use std::sync::Arc;
 
@@ -37,21 +37,19 @@ impl NovaApp {
         ui.add_space(8.0);
 
         // Account picker + place filter + load.
-        if self.ps_state.account.is_empty() {
-            if let Some(first) = self.accounts.first() {
-                self.ps_state.account = first.key();
-            }
+        if self.ps_state.account.is_empty()
+            && let Some(first) = self.accounts.first()
+        {
+            self.ps_state.account = first.key();
         }
         let accounts = self.accounts.clone();
         ui.horizontal(|ui| {
-            egui::ComboBox::from_id_salt("ps-account")
-                .selected_text(self.account_label(&self.ps_state.account))
-                .show_ui(ui, |ui| {
-                    for account in &accounts {
-                        let key = account.key();
-                        ui.selectable_value(&mut self.ps_state.account, key, account.label());
-                    }
-                });
+            egui::ComboBox::from_id_salt("ps-account").selected_text(self.account_label(&self.ps_state.account)).show_ui(ui, |ui| {
+                for account in &accounts {
+                    let key = account.key();
+                    ui.selectable_value(&mut self.ps_state.account, key, account.label());
+                }
+            });
             ui.add(egui::TextEdit::singleline(&mut self.ps_state.place_filter).hint_text("Place ID (optional)").desired_width(160.0));
             if widgets::primary_button(ui, &self.palette, &format!("{} Load", egui_phosphor::regular::ARROWS_CLOCKWISE)).clicked() {
                 self.load_private_servers();
@@ -85,7 +83,13 @@ impl NovaApp {
             }
             widgets::section(ui, &self.palette, "Saved");
             if saved.is_empty() {
-                widgets::empty_state(ui, &self.palette, egui_phosphor::regular::LOCK_KEY, "No saved private servers", "Load an account's servers and save the ones you use.");
+                widgets::empty_state(
+                    ui,
+                    &self.palette,
+                    egui_phosphor::regular::LOCK_KEY,
+                    "No saved private servers",
+                    "Load an account's servers and save the ones you use.",
+                );
             }
             for server in &saved {
                 self.server_row(ui, server, &mut action, true);
@@ -106,7 +110,9 @@ impl NovaApp {
             ui.horizontal(|ui| {
                 ui.vertical(|ui| {
                     ui.label(RichText::new(&server.name).size(14.0).strong().color(self.palette.text));
-                    ui.label(RichText::new(format!("{} · place {}", server.game_name, server.place_id)).size(11.0).color(self.palette.faint));
+                    ui.label(
+                        RichText::new(format!("{} · place {}", server.game_name, server.place_id)).size(11.0).color(self.palette.faint),
+                    );
                 });
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if widgets::ghost_button(ui, &self.palette, &format!("{} Join", egui_phosphor::regular::PLAY)).clicked() {
@@ -119,10 +125,16 @@ impl NovaApp {
                         *action = Some(Action::Refresh(server.clone()));
                     }
                     if saved {
-                        if ui.button(RichText::new(egui_phosphor::regular::TRASH).color(self.palette.danger)).on_hover_text("Remove").clicked() {
+                        if ui
+                            .button(RichText::new(egui_phosphor::regular::TRASH).color(self.palette.danger))
+                            .on_hover_text("Remove")
+                            .clicked()
+                        {
                             *action = Some(Action::Remove(server.id.clone()));
                         }
-                    } else if widgets::ghost_button(ui, &self.palette, &format!("{} Save", egui_phosphor::regular::BOOKMARK_SIMPLE)).clicked() {
+                    } else if widgets::ghost_button(ui, &self.palette, &format!("{} Save", egui_phosphor::regular::BOOKMARK_SIMPLE))
+                        .clicked()
+                    {
                         *action = Some(Action::Save(server.clone()));
                     }
                 });
@@ -150,9 +162,11 @@ impl NovaApp {
             Action::Join(server) => {
                 let keys = if self.selection.is_empty() { vec![self.ps_state.account.clone()] } else { self.selected_keys() };
                 let link = if server.link.is_empty() { server.id.clone() } else { server.link.clone() };
-                self.sender.spawn(Arc::clone(&self.core), Arc::clone(&self.services), move |core, _| match core.join_private_server(&keys, &link) {
-                    Ok(result) => Msg::Toast(result.summary("Joined"), !result.ok()),
-                    Err(err) => Msg::Toast(err.message, true),
+                self.sender.spawn(Arc::clone(&self.core), Arc::clone(&self.services), move |core, _| {
+                    match core.join_private_server(&keys, &link) {
+                        Ok(result) => Msg::Toast(result.summary("Joined"), !result.ok()),
+                        Err(err) => Msg::Toast(err.message, true),
+                    }
                 });
                 self.show_toast("Joining private server…", false);
             }

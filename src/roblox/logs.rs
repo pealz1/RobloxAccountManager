@@ -13,9 +13,7 @@ use std::sync::LazyLock;
 use regex::Regex;
 
 static TRACKER_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(?i)browsertrackerid[^0-9]{0,32}(\d+)").unwrap());
-static JOIN_RE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"Joining game '([0-9a-fA-F-]+)' place (\d+) at ([0-9.]+)").unwrap()
-});
+static JOIN_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"Joining game '([0-9a-fA-F-]+)' place (\d+) at ([0-9.]+)").unwrap());
 static LOADTIME_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"placeid:(\d+),.*?universeid:(\d+)").unwrap());
 static LINE_TIME_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+Z)").unwrap());
 static FILE_TIME_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(\d{8}T\d{6}Z)").unwrap());
@@ -50,10 +48,8 @@ pub fn scan_logs() -> Vec<LogInfo> {
         if !name.ends_with("_last.log") {
             continue;
         }
-        let started = FILE_TIME_RE
-            .captures(&name)
-            .and_then(|c| NaiveDateTime::parse_from_str(&c[1], "%Y%m%dT%H%M%SZ").ok())
-            .map(|n| n.and_utc());
+        let started =
+            FILE_TIME_RE.captures(&name).and_then(|c| NaiveDateTime::parse_from_str(&c[1], "%Y%m%dT%H%M%SZ").ok()).map(|n| n.and_utc());
         let mut info = LogInfo { path: entry.path(), started, ..Default::default() };
         if let Ok(content) = read_head(&entry.path(), 60_000) {
             let lower = content.to_lowercase();
@@ -104,10 +100,16 @@ pub fn parse_joins(path: &std::path::Path) -> Vec<JoinEvent> {
 pub fn user_id_log_times() -> HashMap<u64, DateTime<Utc>> {
     let mut map = HashMap::new();
     for info in scan_logs() {
-        if info.user_id > 0 {
-            if let Some(started) = info.started {
-                map.entry(info.user_id).and_modify(|t| { if started > *t { *t = started } }).or_insert(started);
-            }
+        if info.user_id > 0
+            && let Some(started) = info.started
+        {
+            map.entry(info.user_id)
+                .and_modify(|t| {
+                    if started > *t {
+                        *t = started
+                    }
+                })
+                .or_insert(started);
         }
     }
     map

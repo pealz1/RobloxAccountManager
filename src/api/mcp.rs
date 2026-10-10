@@ -6,7 +6,7 @@
 
 use super::commands;
 use crate::core::Core;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::io::{BufRead, Write};
 use std::sync::Arc;
 
@@ -42,26 +42,30 @@ fn handle(core: &Core, request: &Value, expose: bool) -> Option<Value> {
     let params = request.get("params").cloned().unwrap_or(json!({}));
 
     // Notifications carry no id and get no response.
-    if id.is_none() {
-        return None;
-    }
+    id.as_ref()?;
     let id = id.unwrap();
 
     match method {
-        "initialize" => Some(result_response(id, json!({
-            "protocolVersion": PROTOCOL_VERSION,
-            "capabilities": { "tools": {} },
-            "serverInfo": { "name": "nova-ram", "version": crate::VERSION },
-            "instructions": "Manage Roblox accounts in Nova RAM: list, add, import, launch, group and more. Cookies are never returned unless the server is configured to expose secrets. Destructive tools need confirm:true.",
-        }))),
+        "initialize" => Some(result_response(
+            id,
+            json!({
+                "protocolVersion": PROTOCOL_VERSION,
+                "capabilities": { "tools": {} },
+                "serverInfo": { "name": "nova-ram", "version": crate::VERSION },
+                "instructions": "Manage Roblox accounts in Nova RAM: list, add, import, launch, group and more. Cookies are never returned unless the server is configured to expose secrets. Destructive tools need confirm:true.",
+            }),
+        )),
         "ping" => Some(result_response(id, json!({}))),
-        "tools/list" => Some(result_response(id, json!({
-            "tools": commands::tools().into_iter().map(|t| json!({
-                "name": t.name,
-                "description": t.description,
-                "inputSchema": t.schema,
-            })).collect::<Vec<_>>(),
-        }))),
+        "tools/list" => Some(result_response(
+            id,
+            json!({
+                "tools": commands::tools().into_iter().map(|t| json!({
+                    "name": t.name,
+                    "description": t.description,
+                    "inputSchema": t.schema,
+                })).collect::<Vec<_>>(),
+            }),
+        )),
         "tools/call" => {
             let name = params.get("name").and_then(Value::as_str).unwrap_or("");
             let args = params.get("arguments").cloned().unwrap_or(json!({}));
@@ -113,9 +117,15 @@ mod tests {
     #[test]
     fn tool_call_dispatches_and_flags_errors() {
         let (_dir, core) = test_core();
-        let ok = handle(&core, &json!({"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"status","arguments":{}}}), false).unwrap();
+        let ok =
+            handle(&core, &json!({"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"status","arguments":{}}}), false).unwrap();
         assert_eq!(ok["result"]["isError"], false);
-        let err = handle(&core, &json!({"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"delete_account","arguments":{"account":"x"}}}), false).unwrap();
+        let err = handle(
+            &core,
+            &json!({"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"delete_account","arguments":{"account":"x"}}}),
+            false,
+        )
+        .unwrap();
         assert_eq!(err["result"]["isError"], true);
     }
 }

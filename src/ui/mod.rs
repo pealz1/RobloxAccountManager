@@ -1,8 +1,8 @@
 //! The desktop GUI (egui/eframe).
 
 mod task;
-mod unlock;
 mod theme;
+mod unlock;
 mod widgets;
 mod pages {
     pub mod accounts;
@@ -16,7 +16,7 @@ mod pages {
 }
 
 use crate::core::Core;
-use crate::services::{auto_rejoin::RejoinManager, Services};
+use crate::services::{Services, auto_rejoin::RejoinManager};
 use crate::store::model::Account;
 use eframe::egui::{self, Color32, RichText};
 use std::collections::{HashMap, HashSet};
@@ -185,16 +185,16 @@ impl NovaApp {
         if let Some(handle) = self.avatars.get(&user_id) {
             return Some(handle.clone());
         }
-        if let Some(bytes) = self.services.avatars.cached(user_id) {
-            if let Ok(image) = image::load_from_memory(&bytes) {
-                let rgba = image.to_rgba8();
-                let size = [rgba.width() as usize, rgba.height() as usize];
-                let color = egui::ColorImage::from_rgba_unmultiplied(size, &rgba);
-                let handle = ctx.load_texture(format!("avatar-{user_id}"), color, egui::TextureOptions::LINEAR);
-                self.avatars.insert(user_id, handle.clone());
-                self.avatar_pending.remove(&user_id);
-                return Some(handle);
-            }
+        if let Some(bytes) = self.services.avatars.cached(user_id)
+            && let Ok(image) = image::load_from_memory(&bytes)
+        {
+            let rgba = image.to_rgba8();
+            let size = [rgba.width() as usize, rgba.height() as usize];
+            let color = egui::ColorImage::from_rgba_unmultiplied(size, &rgba);
+            let handle = ctx.load_texture(format!("avatar-{user_id}"), color, egui::TextureOptions::LINEAR);
+            self.avatars.insert(user_id, handle.clone());
+            self.avatar_pending.remove(&user_id);
+            return Some(handle);
         }
         if self.avatar_pending.insert(user_id) && self.services.avatars.needs_refresh(user_id) {
             let avatars = Arc::clone(&self.services.avatars);
@@ -245,11 +245,8 @@ impl NovaApp {
 
         for (page, icon, label) in Page::NAV {
             let selected = self.page == page;
-            let (text_color, bg) = if selected {
-                (self.palette.accent_text, self.palette.accent)
-            } else {
-                (self.palette.muted, Color32::TRANSPARENT)
-            };
+            let (text_color, bg) =
+                if selected { (self.palette.accent_text, self.palette.accent) } else { (self.palette.muted, Color32::TRANSPARENT) };
             let label_text = format!("{icon}  {label}");
             let button = egui::Button::new(RichText::new(label_text).color(text_color).size(13.5))
                 .fill(bg)
@@ -267,12 +264,25 @@ impl NovaApp {
         ui.with_layout(egui::Layout::bottom_up(egui::Align::Center), |ui| {
             ui.add_space(12.0);
             ui.label(RichText::new(format!("v{}", crate::VERSION)).size(10.0).color(self.palette.faint));
-            if let Some(version) = self.services.live.update_available() {
-                if ui.button(RichText::new(format!("{} Update to v{version}", egui_phosphor::regular::DOWNLOAD_SIMPLE)).color(self.palette.accent)).clicked() {
-                    self.page = Page::Settings;
-                }
+            if let Some(version) = self.services.live.update_available()
+                && ui
+                    .button(
+                        RichText::new(format!("{} Update to v{version}", egui_phosphor::regular::DOWNLOAD_SIMPLE))
+                            .color(self.palette.accent),
+                    )
+                    .clicked()
+            {
+                self.page = Page::Settings;
             }
-            if ui.add(egui::Button::new(RichText::new(format!("{}  Kill all Roblox", egui_phosphor::regular::X_CIRCLE)).color(self.palette.danger)).fill(Color32::TRANSPARENT)).clicked() {
+            if ui
+                .add(
+                    egui::Button::new(
+                        RichText::new(format!("{}  Kill all Roblox", egui_phosphor::regular::X_CIRCLE)).color(self.palette.danger),
+                    )
+                    .fill(Color32::TRANSPARENT),
+                )
+                .clicked()
+            {
                 let (closed, remaining) = crate::win::process::kill_all();
                 self.show_toast(format!("Closed {closed} client(s), {remaining} remaining"), remaining > 0);
             }
@@ -312,7 +322,14 @@ impl NovaApp {
                         keep = false;
                     }
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        if ui.add(egui::Button::new(RichText::new("Confirm").color(Color32::WHITE)).fill(self.palette.danger).corner_radius(8.0)).clicked() {
+                        if ui
+                            .add(
+                                egui::Button::new(RichText::new("Confirm").color(Color32::WHITE))
+                                    .fill(self.palette.danger)
+                                    .corner_radius(8.0),
+                            )
+                            .clicked()
+                        {
                             run = true;
                             keep = false;
                         }
@@ -334,14 +351,17 @@ impl NovaApp {
             return;
         }
         let color = if error { self.palette.danger } else { self.palette.online };
-        egui::Area::new(egui::Id::new("toast"))
-            .anchor(egui::Align2::CENTER_BOTTOM, egui::vec2(0.0, -24.0))
-            .show(ctx, |ui| {
-                egui::Frame::new().fill(self.palette.elevated).stroke(egui::Stroke::new(1.0, color)).corner_radius(10.0).inner_margin(egui::Margin::symmetric(16, 10)).show(ui, |ui| {
+        egui::Area::new(egui::Id::new("toast")).anchor(egui::Align2::CENTER_BOTTOM, egui::vec2(0.0, -24.0)).show(ctx, |ui| {
+            egui::Frame::new()
+                .fill(self.palette.elevated)
+                .stroke(egui::Stroke::new(1.0, color))
+                .corner_radius(10.0)
+                .inner_margin(egui::Margin::symmetric(16, 10))
+                .show(ui, |ui| {
                     let icon = if error { egui_phosphor::regular::WARNING_CIRCLE } else { egui_phosphor::regular::CHECK_CIRCLE };
                     ui.label(RichText::new(format!("{icon}  {text}")).color(self.palette.text));
                 });
-            });
+        });
         ctx.request_repaint_after(std::time::Duration::from_millis(250));
     }
 }

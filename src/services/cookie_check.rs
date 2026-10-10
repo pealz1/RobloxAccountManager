@@ -1,12 +1,12 @@
 //! Validates saved cookies, updating each account's status and (when valid) its
 //! identity. Runs on startup and on demand, spaced out to respect rate limits.
 
-use super::{interruptible_sleep, Services};
+use super::{Services, interruptible_sleep};
 use crate::core::Core;
 use crate::roblox::account as api;
 use crate::store::model::CookieStatus;
-use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
 /// Checks one account's cookie and records the result. Returns the new status.

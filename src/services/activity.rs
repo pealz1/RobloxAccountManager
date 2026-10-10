@@ -3,13 +3,13 @@
 //! Roblox logs don't name their PID, so each client is matched to the account log
 //! whose start time is closest to the process's creation time (within a window).
 
-use super::{interruptible_sleep, Activity, Instance, Services};
+use super::{Activity, Instance, Services, interruptible_sleep};
 use crate::roblox::logs;
 use crate::win::process::{self, ProcId};
 use chrono::{DateTime, Duration as ChronoDuration, Utc};
 use std::collections::HashMap;
-use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
 /// FILETIME (100 ns since 1601) → UTC.

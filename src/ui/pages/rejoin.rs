@@ -1,8 +1,8 @@
 //! The Auto-Rejoin page: configure and run per-account rejoin workers.
 
 use crate::store::model::RejoinConfig;
-use crate::ui::widgets;
 use crate::ui::NovaApp;
+use crate::ui::widgets;
 use eframe::egui::{self, RichText};
 use std::sync::Arc;
 
@@ -32,17 +32,28 @@ impl NovaApp {
                     self.rejoin.stop_all();
                 }
                 if widgets::primary_button(ui, &self.palette, &format!("{} Add", egui_phosphor::regular::PLUS)).clicked() {
-                    let account = self.selected_keys().first().cloned().or_else(|| self.accounts.first().map(|a| a.key())).unwrap_or_default();
+                    let account =
+                        self.selected_keys().first().cloned().or_else(|| self.accounts.first().map(|a| a.key())).unwrap_or_default();
                     self.rejoin_dialog = Some(RejoinDialog::new(account));
                 }
             });
         });
-        ui.label(RichText::new("Relaunches an account when its client closes or it leaves the target place.").size(12.0).color(self.palette.muted));
+        ui.label(
+            RichText::new("Relaunches an account when its client closes or it leaves the target place.")
+                .size(12.0)
+                .color(self.palette.muted),
+        );
         ui.add_space(10.0);
 
         let configs = self.core.snapshot().auto_rejoin.clone();
         if configs.is_empty() {
-            widgets::empty_state(ui, &self.palette, egui_phosphor::regular::ARROWS_CLOCKWISE, "No Auto-Rejoin entries", "Add one to keep an account in a game.");
+            widgets::empty_state(
+                ui,
+                &self.palette,
+                egui_phosphor::regular::ARROWS_CLOCKWISE,
+                "No Auto-Rejoin entries",
+                "Add one to keep an account in a game.",
+            );
             return;
         }
 
@@ -73,7 +84,9 @@ impl NovaApp {
                                 if widgets::ghost_button(ui, &self.palette, &format!("{} Stop", egui_phosphor::regular::STOP)).clicked() {
                                     to_stop = Some(config.account.clone());
                                 }
-                            } else if widgets::primary_button(ui, &self.palette, &format!("{} Start", egui_phosphor::regular::PLAY)).clicked() {
+                            } else if widgets::primary_button(ui, &self.palette, &format!("{} Start", egui_phosphor::regular::PLAY))
+                                .clicked()
+                            {
                                 to_start = Some(config.clone());
                             }
                         });
@@ -112,13 +125,11 @@ pub fn show_dialog(app: &mut NovaApp, ctx: &egui::Context, mut dialog: RejoinDia
         ui.add_space(10.0);
 
         ui.label(RichText::new("Account").size(11.0).color(app.palette.muted));
-        egui::ComboBox::from_id_salt("rejoin-account")
-            .selected_text(app.account_label_for(&dialog.config.account))
-            .show_ui(ui, |ui| {
-                for account in &accounts {
-                    ui.selectable_value(&mut dialog.config.account, account.key(), account.label());
-                }
-            });
+        egui::ComboBox::from_id_salt("rejoin-account").selected_text(app.account_label_for(&dialog.config.account)).show_ui(ui, |ui| {
+            for account in &accounts {
+                ui.selectable_value(&mut dialog.config.account, account.key(), account.label());
+            }
+        });
 
         ui.add_space(6.0);
         ui.label(RichText::new("Place ID").size(11.0).color(app.palette.muted));

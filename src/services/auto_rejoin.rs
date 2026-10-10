@@ -1,7 +1,7 @@
 //! Per-account Auto-Rejoin: relaunch an account when its client exits or it leaves
 //! the target place. One worker thread per enabled account.
 
-use super::{interruptible_sleep, Services};
+use super::{Services, interruptible_sleep};
 use crate::core::Core;
 use crate::roblox::account as api;
 use crate::roblox::launch::LaunchRequest;
@@ -128,16 +128,18 @@ fn run(core: &Core, stop: &AtomicBool, config: &RejoinConfig, mut status: impl F
 
 fn account_is_present(core: &Core, account: &crate::store::model::Account, config: &RejoinConfig) -> bool {
     // Presence API is authoritative when we have a user id and cookie.
-    if config.check_presence && account.user_id > 0 && !account.cookie.is_empty() {
-        if let Ok(presence) = api::presence(account.user_id, &account.cookie) {
-            if !presence.online {
-                return false;
-            }
-            if config.check_place_id {
-                return presence.place_id == Some(config.place_id) || presence.root_place_id == Some(config.place_id);
-            }
-            return presence.in_game;
+    if config.check_presence
+        && account.user_id > 0
+        && !account.cookie.is_empty()
+        && let Ok(presence) = api::presence(account.user_id, &account.cookie)
+    {
+        if !presence.online {
+            return false;
         }
+        if config.check_place_id {
+            return presence.place_id == Some(config.place_id) || presence.root_place_id == Some(config.place_id);
+        }
+        return presence.in_game;
     }
     // Fall back to "is any client running for this account".
     let _ = core;

@@ -103,15 +103,15 @@ pub fn looks_like_cookie(text: &str) -> bool {
 /// Parses pasted text or a text / CSV / JSON file.
 pub fn parse_text(text: &str) -> ImportBatch {
     let trimmed = text.trim_start_matches('\u{feff}').trim();
-    if trimmed.starts_with('[') || trimmed.starts_with('{') {
-        if let Ok(value) = serde_json::from_str::<Value>(trimmed) {
-            return parse_json_value(&value);
-        }
+    if (trimmed.starts_with('[') || trimmed.starts_with('{'))
+        && let Ok(value) = serde_json::from_str::<Value>(trimmed)
+    {
+        return parse_json_value(&value);
     }
-    if let Some(first) = trimmed.lines().find(|l| !l.trim().is_empty()) {
-        if let Some(batch) = parse_csv(first, trimmed) {
-            return batch;
-        }
+    if let Some(first) = trimmed.lines().find(|l| !l.trim().is_empty())
+        && let Some(batch) = parse_csv(first, trimmed)
+    {
+        return batch;
     }
     parse_lines(trimmed)
 }
@@ -143,11 +143,7 @@ fn parse_lines(text: &str) -> ImportBatch {
         }
         let parts: Vec<&str> = line.splitn(2, [':', ',', '\t']).map(str::trim).collect();
         if parts.len() == 2 && !parts[0].is_empty() && !parts[1].is_empty() {
-            batch.accounts.push(ImportedAccount {
-                username: parts[0].to_owned(),
-                password: parts[1].to_owned(),
-                ..Default::default()
-            });
+            batch.accounts.push(ImportedAccount { username: parts[0].to_owned(), password: parts[1].to_owned(), ..Default::default() });
         } else {
             batch.skipped += 1;
         }
@@ -203,11 +199,7 @@ pub fn parse_json_value(value: &Value) -> ImportBatch {
     let mut batch = ImportBatch { source: "json".into(), ..Default::default() };
     let array = match value {
         Value::Array(items) => Some(items.clone()),
-        Value::Object(map) => map
-            .get("accounts")
-            .and_then(Value::as_array)
-            .cloned()
-            .or_else(|| Some(map.values().cloned().collect())),
+        Value::Object(map) => map.get("accounts").and_then(Value::as_array).cloned().or_else(|| Some(map.values().cloned().collect())),
         _ => None,
     };
     let Some(items) = array else {
@@ -220,10 +212,7 @@ pub fn parse_json_value(value: &Value) -> ImportBatch {
             continue;
         };
         let string = |keys: &[&str]| -> String {
-            keys.iter()
-                .find_map(|k| obj.get(*k).and_then(Value::as_str))
-                .map(str::to_owned)
-                .unwrap_or_default()
+            keys.iter().find_map(|k| obj.get(*k).and_then(Value::as_str)).map(str::to_owned).unwrap_or_default()
         };
         let cookie_raw = string(&["cookie", "securityToken", "SecurityToken", ".ROBLOSECURITY", "roblosecurity", "token"]);
         let account = ImportedAccount {
@@ -253,7 +242,8 @@ pub(crate) fn as_u64(value: &Value) -> Option<u64> {
 mod tests {
     use super::*;
 
-    const COOKIE: &str = "_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|ABC123def";
+    const COOKIE: &str =
+        "_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|ABC123def";
 
     #[test]
     fn plain_cookie_lines() {

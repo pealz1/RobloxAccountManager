@@ -52,9 +52,7 @@ pub fn dpapi_unprotect(blob: &[u8], entropy: &[u8]) -> AppResult<Vec<u8>> {
 #[cfg(windows)]
 fn dpapi_call(input: &[u8], entropy: &[u8], protect: bool) -> AppResult<Vec<u8>> {
     use windows_sys::Win32::Foundation::LocalFree;
-    use windows_sys::Win32::Security::Cryptography::{
-        CRYPT_INTEGER_BLOB, CRYPTPROTECT_UI_FORBIDDEN, CryptProtectData, CryptUnprotectData,
-    };
+    use windows_sys::Win32::Security::Cryptography::{CRYPT_INTEGER_BLOB, CRYPTPROTECT_UI_FORBIDDEN, CryptProtectData, CryptUnprotectData};
     let data_in = CRYPT_INTEGER_BLOB { cbData: input.len() as u32, pbData: input.as_ptr() as *mut u8 };
     let entropy_blob = CRYPT_INTEGER_BLOB { cbData: entropy.len() as u32, pbData: entropy.as_ptr() as *mut u8 };
     let entropy_ptr = if entropy.is_empty() { std::ptr::null() } else { &entropy_blob as *const _ };
@@ -63,9 +61,25 @@ fn dpapi_call(input: &[u8], entropy: &[u8], protect: bool) -> AppResult<Vec<u8>>
     // buffer is allocated by Windows and released with LocalFree below.
     let ok = unsafe {
         if protect {
-            CryptProtectData(&data_in, std::ptr::null(), entropy_ptr, std::ptr::null(), std::ptr::null(), CRYPTPROTECT_UI_FORBIDDEN, &mut out)
+            CryptProtectData(
+                &data_in,
+                std::ptr::null(),
+                entropy_ptr,
+                std::ptr::null(),
+                std::ptr::null(),
+                CRYPTPROTECT_UI_FORBIDDEN,
+                &mut out,
+            )
         } else {
-            CryptUnprotectData(&data_in, std::ptr::null_mut(), entropy_ptr, std::ptr::null(), std::ptr::null(), CRYPTPROTECT_UI_FORBIDDEN, &mut out)
+            CryptUnprotectData(
+                &data_in,
+                std::ptr::null_mut(),
+                entropy_ptr,
+                std::ptr::null(),
+                std::ptr::null(),
+                CRYPTPROTECT_UI_FORBIDDEN,
+                &mut out,
+            )
         }
     };
     if ok == 0 || out.pbData.is_null() {
@@ -73,7 +87,12 @@ fn dpapi_call(input: &[u8], entropy: &[u8], protect: bool) -> AppResult<Vec<u8>>
         return Err(if protect {
             AppError::new("DPAPI_FAILED", "Windows Encryption Failed", "Windows could not encrypt the data.").with_detail(code.to_string())
         } else {
-            AppError::new("DPAPI_DECRYPT_FAILED", "Windows Decryption Failed", "This data was encrypted for a different Windows account or computer.").with_detail(code.to_string())
+            AppError::new(
+                "DPAPI_DECRYPT_FAILED",
+                "Windows Decryption Failed",
+                "This data was encrypted for a different Windows account or computer.",
+            )
+            .with_detail(code.to_string())
         });
     }
     // SAFETY: Windows returned a buffer of cbData bytes.
@@ -116,12 +135,9 @@ impl KdfParams {
 }
 
 fn argon2_raw(alg: Algorithm, password: &[u8], salt: &[u8], m_kib: u32, t: u32, p: u32) -> AppResult<[u8; 32]> {
-    let params = Params::new(m_kib, t, p, Some(32))
-        .map_err(|e| AppError::unexpected("argon2 params", e))?;
+    let params = Params::new(m_kib, t, p, Some(32)).map_err(|e| AppError::unexpected("argon2 params", e))?;
     let mut key = [0u8; 32];
-    Argon2::new(alg, Version::V0x13, params)
-        .hash_password_into(password, salt, &mut key)
-        .map_err(|e| AppError::unexpected("argon2", e))?;
+    Argon2::new(alg, Version::V0x13, params).hash_password_into(password, salt, &mut key).map_err(|e| AppError::unexpected("argon2", e))?;
     Ok(key)
 }
 
@@ -129,9 +145,7 @@ fn argon2_raw(alg: Algorithm, password: &[u8], salt: &[u8], m_kib: u32, t: u32, 
 pub fn aes_encrypt(key: &[u8; 32], plain: &[u8]) -> AppResult<(Vec<u8>, Vec<u8>)> {
     let cipher = Aes256Gcm::new_from_slice(key).map_err(|e| AppError::unexpected("aes key", e))?;
     let nonce = random_bytes::<12>();
-    let ct = cipher
-        .encrypt(Nonce::from_slice(&nonce), plain)
-        .map_err(|e| AppError::unexpected("aes encrypt", e))?;
+    let ct = cipher.encrypt(Nonce::from_slice(&nonce), plain).map_err(|e| AppError::unexpected("aes encrypt", e))?;
     Ok((nonce.to_vec(), ct))
 }
 
@@ -162,18 +176,13 @@ pub fn evanovar_decrypt(key: &[u8; 32], nonce: &[u8], tag: &[u8], ciphertext: &[
     let cipher = Aes256Gcm16::new_from_slice(key).map_err(|e| AppError::unexpected("aes key", e))?;
     let mut joined = ciphertext.to_vec();
     joined.extend_from_slice(tag);
-    cipher
-        .decrypt(aes_gcm::aead::generic_array::GenericArray::from_slice(nonce), joined.as_slice())
-        .map_err(|_| decrypt_failed())
+    cipher.decrypt(aes_gcm::aead::generic_array::GenericArray::from_slice(nonce), joined.as_slice()).map_err(|_| decrypt_failed())
 }
 
 /// Python's `base64.b64decode(text)` without `validate`: characters outside the
 /// alphabet are dropped before decoding. Evanovar stores hex salts and decodes them this way.
 pub fn python_lenient_b64(text: &str) -> AppResult<Vec<u8>> {
-    let filtered: String = text
-        .chars()
-        .filter(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '/' | '='))
-        .collect();
+    let filtered: String = text.chars().filter(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '/' | '=')).collect();
     let trimmed = filtered.trim_end_matches('=');
     let padded = format!("{trimmed}{}", "=".repeat((4 - trimmed.len() % 4) % 4));
     unb64(&padded)
@@ -199,10 +208,7 @@ pub fn ic3_password_decrypt(file: &[u8], password: &str) -> AppResult<Vec<u8>> {
     let (salt, rest) = body.split_at(16);
     let (nonce, boxed) = rest.split_at(24);
     let hash = Sha512::digest(password.as_bytes());
-    let attempts = [
-        (Algorithm::Argon2i, 128 * 1024, 6),
-        (Algorithm::Argon2id, 256 * 1024, 3),
-    ];
+    let attempts = [(Algorithm::Argon2i, 128 * 1024, 6), (Algorithm::Argon2id, 256 * 1024, 3)];
     for (alg, m_kib, t) in attempts {
         let key = argon2_raw(alg, &hash, salt, m_kib, t, 1)?;
         let cipher = XSalsa20Poly1305::new_from_slice(&key).map_err(|e| AppError::unexpected("secretbox key", e))?;

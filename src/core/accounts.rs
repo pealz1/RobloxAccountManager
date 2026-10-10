@@ -58,7 +58,8 @@ impl Core {
     /// Stores already-resolved imported accounts (identity resolution happens in the caller).
     pub fn apply_import(&self, batch: &ImportBatch) -> AppResult<ImportOutcome> {
         let mut outcome = ImportOutcome { skipped: batch.skipped, need_sign_in: batch.needs_sign_in().len(), ..Default::default() };
-        let importable: Vec<Account> = batch.accounts.iter().filter(|a| a.has_cookie()).cloned().map(ImportedAccount::into_account).collect();
+        let importable: Vec<Account> =
+            batch.accounts.iter().filter(|a| a.has_cookie()).cloned().map(ImportedAccount::into_account).collect();
         let favorites = batch.favorites.clone();
         let recents = batch.recent_games.clone();
         let groups = batch.groups.clone();
@@ -294,9 +295,8 @@ mod tests {
     #[test]
     fn import_counts_added_and_updated() {
         let (_dir, core) = test_core();
-        let mut batch = ImportBatch::default();
-        batch.accounts = vec![imported(1, "a"), imported(2, "b")];
-        batch.groups = vec!["Farm".into()];
+        let mut batch =
+            ImportBatch { accounts: vec![imported(1, "a"), imported(2, "b")], groups: vec!["Farm".into()], ..Default::default() };
         assert_eq!(core.apply_import(&batch).unwrap(), ImportOutcome { added: 2, ..Default::default() });
         // Re-import one: counts as updated.
         batch.accounts = vec![imported(1, "a")];
@@ -308,8 +308,7 @@ mod tests {
     #[test]
     fn notes_groups_and_delete() {
         let (_dir, core) = test_core();
-        let mut batch = ImportBatch::default();
-        batch.accounts = vec![imported(7, "bob")];
+        let batch = ImportBatch { accounts: vec![imported(7, "bob")], ..Default::default() };
         core.apply_import(&batch).unwrap();
         core.set_note("bob", "main").unwrap();
         core.set_group("7", "Mules").unwrap();
@@ -323,9 +322,7 @@ mod tests {
     #[test]
     fn rename_group_moves_members() {
         let (_dir, core) = test_core();
-        let mut batch = ImportBatch::default();
-        batch.accounts = vec![imported(1, "a")];
-        batch.groups = vec!["Old".into()];
+        let batch = ImportBatch { accounts: vec![imported(1, "a")], groups: vec!["Old".into()], ..Default::default() };
         core.apply_import(&batch).unwrap();
         core.set_group("a", "Old").unwrap();
         assert!(core.rename_group("Old", "New").unwrap());

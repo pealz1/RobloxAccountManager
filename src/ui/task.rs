@@ -4,8 +4,8 @@
 use crate::core::Core;
 use crate::services::Services;
 use eframe::egui;
-use std::sync::mpsc::{Receiver, Sender};
 use std::sync::Arc;
+use std::sync::mpsc::{Receiver, Sender};
 
 /// Messages background tasks post back to the UI.
 pub enum Msg {

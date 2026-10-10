@@ -67,7 +67,11 @@ pub fn plan(work_area: Rect, tiles: &[Tile], enforced_min_width: i32) -> AppResu
             continue;
         }
         if columns == 1 && enforced_min_width > 0 && cell_width < enforced_min_width {
-            return Err(AppError::new("MONITOR_TOO_NARROW", "Monitor Too Narrow", "This monitor cannot fit a Roblox window at its minimum width."));
+            return Err(AppError::new(
+                "MONITOR_TOO_NARROW",
+                "Monitor Too Narrow",
+                "This monitor cannot fit a Roblox window at its minimum width.",
+            ));
         }
 
         // Choose a window height: 16:9 of the client width, capped to the row height.
@@ -80,11 +84,7 @@ pub fn plan(work_area: Rect, tiles: &[Tile], enforced_min_width: i32) -> AppResu
             let width = cell_width;
             let client_width = (width - tile.frame_width).max(1);
             let preferred = (client_width * 9 + 8) / 16 + tile.frame_height;
-            let height = if count <= 2 {
-                (row_height - GAP * 2).max(1)
-            } else {
-                preferred.min(row_height - GAP * 2).max(1)
-            };
+            let height = if count <= 2 { (row_height - GAP * 2).max(1) } else { preferred.min(row_height - GAP * 2).max(1) };
             max_height = max_height.max(height);
             placements.push((index, column, cell_left, width, height));
         }
@@ -96,15 +96,8 @@ pub fn plan(work_area: Rect, tiles: &[Tile], enforced_min_width: i32) -> AppResu
         for (index, column, cell_left, width, height) in placements {
             let row = index / columns;
             let x = cell_left + GAP;
-            let y = if rows > 1 {
-                work_area.top + GAP + row as i32 * row_span / (rows as i32 - 1)
-            } else {
-                work_area.top + GAP
-            };
-            out.push(Placement {
-                hwnd: tiles[index].hwnd,
-                rect: Rect { left: x, top: y, right: x + width, bottom: y + height },
-            });
+            let y = if rows > 1 { work_area.top + GAP + row as i32 * row_span / (rows as i32 - 1) } else { work_area.top + GAP };
+            out.push(Placement { hwnd: tiles[index].hwnd, rect: Rect { left: x, top: y, right: x + width, bottom: y + height } });
             let _ = column;
         }
         return Ok((out, GridResult { columns, rows }));
@@ -116,10 +109,10 @@ pub fn plan(work_area: Rect, tiles: &[Tile], enforced_min_width: i32) -> AppResu
 #[cfg(windows)]
 pub fn tile_roblox_windows() -> AppResult<GridResult> {
     use windows_sys::Win32::Foundation::{HWND, POINT, RECT};
-    use windows_sys::Win32::Graphics::Gdi::{GetMonitorInfoW, MONITORINFO, MONITOR_DEFAULTTONEAREST, MonitorFromPoint};
+    use windows_sys::Win32::Graphics::Gdi::{GetMonitorInfoW, MONITOR_DEFAULTTONEAREST, MONITORINFO, MonitorFromPoint};
     use windows_sys::Win32::UI::WindowsAndMessaging::{
-        GetClientRect, GetCursorPos, GetWindowRect, IsIconic, SetWindowPos, ShowWindow, SW_RESTORE,
-        SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, SWP_NOZORDER, HWND_TOP,
+        GetClientRect, GetCursorPos, GetWindowRect, HWND_TOP, IsIconic, SW_RESTORE, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, SWP_NOZORDER,
+        SetWindowPos, ShowWindow,
     };
 
     let windows: Vec<super::window::WindowInfo> = super::window::windows_for(&super::process::id_set().keys().copied().collect::<Vec<_>>())
@@ -127,7 +120,11 @@ pub fn tile_roblox_windows() -> AppResult<GridResult> {
         .filter(|w| w.area() > 0)
         .collect();
     if windows.is_empty() {
-        return Err(AppError::new("NO_ROBLOX_WINDOWS", "No Roblox Windows", "Open at least one visible Roblox window before using Window Grid."));
+        return Err(AppError::new(
+            "NO_ROBLOX_WINDOWS",
+            "No Roblox Windows",
+            "Open at least one visible Roblox window before using Window Grid.",
+        ));
     }
 
     // Work area of the monitor under the cursor.
@@ -169,7 +166,15 @@ pub fn tile_roblox_windows() -> AppResult<GridResult> {
         for placement in &placements {
             let hwnd = placement.hwnd as HWND;
             unsafe {
-                SetWindowPos(hwnd, std::ptr::null_mut(), 0, 0, placement.rect.width(), placement.rect.height(), SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+                SetWindowPos(
+                    hwnd,
+                    std::ptr::null_mut(),
+                    0,
+                    0,
+                    placement.rect.width(),
+                    placement.rect.height(),
+                    SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE,
+                );
                 let mut wr = RECT { left: 0, top: 0, right: 0, bottom: 0 };
                 GetWindowRect(hwnd, &mut wr);
                 let actual_width = wr.right - wr.left;
@@ -182,7 +187,15 @@ pub fn tile_roblox_windows() -> AppResult<GridResult> {
             // Widths accepted: move each window, back to front, into position.
             for placement in placements.iter().rev() {
                 unsafe {
-                    SetWindowPos(placement.hwnd as HWND, HWND_TOP, placement.rect.left, placement.rect.top, 0, 0, SWP_NOSIZE | SWP_NOACTIVATE);
+                    SetWindowPos(
+                        placement.hwnd as HWND,
+                        HWND_TOP,
+                        placement.rect.left,
+                        placement.rect.top,
+                        0,
+                        0,
+                        SWP_NOSIZE | SWP_NOACTIVATE,
+                    );
                 }
             }
             crate::log_info!("Window Grid arranged {} window(s) into {}x{}", placements.len(), result.columns, result.rows);

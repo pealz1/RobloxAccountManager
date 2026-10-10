@@ -59,11 +59,13 @@ pub fn start(services: &Arc<super::Services>) {
     let body_stop = Arc::clone(&stop);
     let core = Arc::clone(&services.core);
     let worker_services = Arc::clone(services);
-    let worker = super::Worker::spawn("history-collector", stop, move || loop {
-        sync(&core);
-        worker_services.request_repaint();
-        if super::interruptible_sleep(&body_stop, std::time::Duration::from_secs(15)) {
-            return;
+    let worker = super::Worker::spawn("history-collector", stop, move || {
+        loop {
+            sync(&core);
+            worker_services.request_repaint();
+            if super::interruptible_sleep(&body_stop, std::time::Duration::from_secs(15)) {
+                return;
+            }
         }
     });
     services.add_worker(worker);

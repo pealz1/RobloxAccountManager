@@ -16,19 +16,16 @@ pub fn exe_path() -> PathBuf {
 }
 
 pub fn exe_dir() -> PathBuf {
-    exe_path()
-        .parent()
-        .map(Path::to_path_buf)
-        .unwrap_or_else(|| PathBuf::from("."))
+    exe_path().parent().map(Path::to_path_buf).unwrap_or_else(|| PathBuf::from("."))
 }
 
 /// Expands `~` and `%VAR%` and makes the path absolute.
 pub fn expand(raw: &str) -> PathBuf {
     let mut text = raw.trim().trim_matches('"').to_owned();
-    if let Some(rest) = text.strip_prefix('~') {
-        if let Ok(home) = std::env::var("USERPROFILE") {
-            text = format!("{home}{rest}");
-        }
+    if let Some(rest) = text.strip_prefix('~')
+        && let Ok(home) = std::env::var("USERPROFILE")
+    {
+        text = format!("{home}{rest}");
     }
     let mut out = String::new();
     let mut rest = text.as_str();
@@ -52,11 +49,7 @@ pub fn expand(raw: &str) -> PathBuf {
     }
     out.push_str(rest);
     let path = PathBuf::from(out);
-    if path.is_absolute() {
-        path
-    } else {
-        std::env::current_dir().unwrap_or_default().join(path)
-    }
+    if path.is_absolute() { path } else { std::env::current_dir().unwrap_or_default().join(path) }
 }
 
 /// Removes `--data-dir` from `args` and returns the chosen override, if any.

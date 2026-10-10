@@ -131,7 +131,7 @@ pub fn start(url: &str, launcher: Launcher, custom_path: &str) -> AppResult<()> 
             let (folder, exe) = strap_paths(strap);
             let path = local_appdata_join(&[folder, exe])?;
             if !path.exists() {
-                return Err(AppError::not_found(&format!("{folder}"), &path.to_string_lossy()));
+                return Err(AppError::not_found(folder, &path.to_string_lossy()));
             }
             spawn(&path, &["-player", url])
         }
@@ -149,8 +149,9 @@ fn strap_paths(launcher: Launcher) -> (&'static str, &'static str) {
 }
 
 fn local_appdata_join(parts: &[&str]) -> AppResult<PathBuf> {
-    let mut path = crate::paths::local_appdata()
-        .ok_or_else(|| AppError::new("LOCALAPPDATA_MISSING", "Windows App Data Missing", "The LOCALAPPDATA folder could not be located."))?;
+    let mut path = crate::paths::local_appdata().ok_or_else(|| {
+        AppError::new("LOCALAPPDATA_MISSING", "Windows App Data Missing", "The LOCALAPPDATA folder could not be located.")
+    })?;
     for part in parts {
         path.push(part);
     }
@@ -173,23 +174,22 @@ pub fn find_roblox_player() -> AppResult<PathBuf> {
             }
         }
     }
-    best.map(|(_, p)| p).ok_or_else(|| AppError::new(
-        "ROBLOX_NOT_INSTALLED",
-        "Roblox Client Not Found",
-        "No installed Roblox Player was found. Install Roblox or pick another launcher.",
-    ))
+    best.map(|(_, p)| p).ok_or_else(|| {
+        AppError::new(
+            "ROBLOX_NOT_INSTALLED",
+            "Roblox Client Not Found",
+            "No installed Roblox Player was found. Install Roblox or pick another launcher.",
+        )
+    })
 }
 
 #[cfg(windows)]
 fn spawn(program: &Path, args: &[&str]) -> AppResult<()> {
     use std::os::windows::process::CommandExt;
     const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-    std::process::Command::new(program)
-        .args(args)
-        .creation_flags(CREATE_NO_WINDOW)
-        .spawn()
-        .map(|_| ())
-        .map_err(|e| AppError::new("LAUNCH_FAILED", "Roblox Could Not Start", "Windows could not start the launcher.").with_detail(e.to_string()))
+    std::process::Command::new(program).args(args).creation_flags(CREATE_NO_WINDOW).spawn().map(|_| ()).map_err(|e| {
+        AppError::new("LAUNCH_FAILED", "Roblox Could Not Start", "Windows could not start the launcher.").with_detail(e.to_string())
+    })
 }
 
 #[cfg(not(windows))]
@@ -213,12 +213,9 @@ fn spawn_shell(url: &str) -> AppResult<()> {
     use std::os::windows::process::CommandExt;
     const CREATE_NO_WINDOW: u32 = 0x0800_0000;
     // `cmd /c start "" <url>` hands the protocol URL to the registered handler.
-    std::process::Command::new("cmd")
-        .args(["/c", "start", "", url])
-        .creation_flags(CREATE_NO_WINDOW)
-        .spawn()
-        .map(|_| ())
-        .map_err(|e| AppError::new("LAUNCH_FAILED", "Roblox Could Not Start", "Windows could not open the Roblox link.").with_detail(e.to_string()))
+    std::process::Command::new("cmd").args(["/c", "start", "", url]).creation_flags(CREATE_NO_WINDOW).spawn().map(|_| ()).map_err(|e| {
+        AppError::new("LAUNCH_FAILED", "Roblox Could Not Start", "Windows could not open the Roblox link.").with_detail(e.to_string())
+    })
 }
 
 #[cfg(test)]

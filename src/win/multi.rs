@@ -159,13 +159,7 @@ fn enable_handle() -> AppResult<MultiGuard> {
         .spawn(move || handle_monitor(worker_stop, worker_ready))
         .map_err(|e| AppError::unexpected("start handle monitor", e))?;
     crate::log_info!("Multi Roblox started (handle mode)");
-    Ok(MultiGuard {
-        mode: MultiMethod::Handle,
-        mutexes: Vec::new(),
-        cookie_lock: None,
-        monitor_stop: Some(stop),
-        monitor_ready: ready,
-    })
+    Ok(MultiGuard { mode: MultiMethod::Handle, mutexes: Vec::new(), cookie_lock: None, monitor_stop: Some(stop), monitor_ready: ready })
 }
 
 #[cfg(windows)]

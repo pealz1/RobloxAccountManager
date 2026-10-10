@@ -93,22 +93,13 @@ impl Vault {
     /// Returns the protection of an existing vault without decrypting it.
     pub fn peek_protection(dir: &Path) -> Option<Protection> {
         let path = Self::path_in(dir);
-        read_file(&path)
-            .or_else(|_| read_file(&backup_path(&path)))
-            .ok()
-            .map(|f| f.protection)
+        read_file(&path).or_else(|_| read_file(&backup_path(&path))).ok().map(|f| f.protection)
     }
 
     pub fn create(dir: &Path, protection: Protection, password: Option<&str>) -> AppResult<Vault> {
         let key = make_key(protection, password)?;
-        let mut vault = Vault {
-            path: Self::path_in(dir),
-            key,
-            data: Arc::new(VaultData::default()),
-            stamp: None,
-            revision: 1,
-            using_backup: false,
-        };
+        let mut vault =
+            Vault { path: Self::path_in(dir), key, data: Arc::new(VaultData::default()), stamp: None, revision: 1, using_backup: false };
         let _guard = vault.lock()?;
         vault.write(&VaultData::default())?;
         Ok(vault)
@@ -285,9 +276,9 @@ fn make_key(protection: Protection, password: Option<&str>) -> AppResult<Key> {
         Protection::None => Key::None,
         Protection::Windows => Key::Windows,
         Protection::Password => {
-            let password = password.filter(|p| !p.is_empty()).ok_or_else(|| {
-                AppError::invalid("PASSWORD_REQUIRED", "Choose a password for the vault.")
-            })?;
+            let password = password
+                .filter(|p| !p.is_empty())
+                .ok_or_else(|| AppError::invalid("PASSWORD_REQUIRED", "Choose a password for the vault."))?;
             let kdf = KdfParams::fresh();
             Key::Password { key: kdf.derive(password)?, kdf }
         }
@@ -328,8 +319,7 @@ fn decode(file: &VaultFile, key: &Key) -> AppResult<VaultData> {
         (Protection::None, _) => return file.payload.clone().ok_or_else(|| damaged("missing payload")),
         (Protection::Windows, _) => crypto::nova_dpapi_unprotect(&crypto::unb64(&file.data)?)?,
         (Protection::Password, Key::Password { key, .. }) => {
-            crypto::aes_decrypt(key, &crypto::unb64(&file.nonce)?, &crypto::unb64(&file.data)?)
-                .map_err(|_| wrong_password())?
+            crypto::aes_decrypt(key, &crypto::unb64(&file.nonce)?, &crypto::unb64(&file.data)?).map_err(|_| wrong_password())?
         }
         (Protection::Password, _) => return Err(locked_error()),
     };

@@ -160,7 +160,14 @@ pub fn auth_ticket(cookie: &str) -> AppResult<String> {
         .and_then(|v| v.to_str().ok())
         .filter(|t| !t.is_empty())
         .map(str::to_owned)
-        .ok_or_else(|| AppError::new("AUTH_TICKET_MISSING", "Authentication Ticket Missing", "Roblox did not return a launch ticket. Try again shortly.").retryable())
+        .ok_or_else(|| {
+            AppError::new(
+                "AUTH_TICKET_MISSING",
+                "Authentication Ticket Missing",
+                "Roblox did not return a launch ticket. Try again shortly.",
+            )
+            .retryable()
+        })
 }
 
 // ---------- Quick sign-in (cross-device login codes) ----------
@@ -221,19 +228,19 @@ pub fn quick_login_poll(login: &QuickLogin) -> AppResult<QuickStatus> {
     if status == 400 {
         return Ok(QuickStatus::Cancelled);
     }
-    if status == 403 {
-        if let Some(token) = response.headers().get("x-csrf-token").and_then(|v| v.to_str().ok()).map(str::to_owned) {
-            let retry = agent()
-                .post("https://apis.roblox.com/auth-token-service/v1/login/status")
-                .header("Content-Type", "application/json")
-                .header("X-CSRF-TOKEN", &token)
-                .config()
-                .http_status_as_error(false)
-                .build()
-                .send_json(&body)
-                .map_err(|e| network_error("Quick sign-in", &e))?;
-            return read_status(retry);
-        }
+    if status == 403
+        && let Some(token) = response.headers().get("x-csrf-token").and_then(|v| v.to_str().ok()).map(str::to_owned)
+    {
+        let retry = agent()
+            .post("https://apis.roblox.com/auth-token-service/v1/login/status")
+            .header("Content-Type", "application/json")
+            .header("X-CSRF-TOKEN", &token)
+            .config()
+            .http_status_as_error(false)
+            .build()
+            .send_json(&body)
+            .map_err(|e| network_error("Quick sign-in", &e))?;
+        return read_status(retry);
     }
     read_status(response)
 }
@@ -267,11 +274,12 @@ pub fn quick_login_redeem(login: &QuickLogin) -> AppResult<String> {
             .send_json(&body)
             .map_err(|e| network_error("Quick sign-in", &e))?;
         let status = response.status().as_u16();
-        if (status == 403 || status == 400) && attempt == 0 {
-            if let Some(fresh) = response.headers().get("x-csrf-token").and_then(|v| v.to_str().ok()) {
-                token = fresh.to_owned();
-                continue;
-            }
+        if (status == 403 || status == 400)
+            && attempt == 0
+            && let Some(fresh) = response.headers().get("x-csrf-token").and_then(|v| v.to_str().ok())
+        {
+            token = fresh.to_owned();
+            continue;
         }
         if status != 200 {
             return Err(status_error("Quick sign-in", status));
@@ -283,12 +291,12 @@ pub fn quick_login_redeem(login: &QuickLogin) -> AppResult<String> {
 
 fn extract_cookie(response: &ureq::http::Response<ureq::Body>) -> AppResult<String> {
     for value in response.headers().get_all("set-cookie") {
-        if let Ok(text) = value.to_str() {
-            if let Some(rest) = text.strip_prefix(".ROBLOSECURITY=") {
-                let cookie = rest.split(';').next().unwrap_or_default();
-                if !cookie.is_empty() {
-                    return Ok(cookie.to_owned());
-                }
+        if let Ok(text) = value.to_str()
+            && let Some(rest) = text.strip_prefix(".ROBLOSECURITY=")
+        {
+            let cookie = rest.split(';').next().unwrap_or_default();
+            if !cookie.is_empty() {
+                return Ok(cookie.to_owned());
             }
         }
     }

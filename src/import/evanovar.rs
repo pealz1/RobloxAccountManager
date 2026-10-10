@@ -18,8 +18,10 @@ const HARDWARE_SALT: &[u8] = b"roblox_account_manager_salt_v1";
 /// `machine_id` (SHA-256 hex of the WMI identifiers) unlocks hardware files when supplied.
 pub fn read_accounts(path: &Path, password: Option<&str>, machine_id: Option<&str>) -> AppResult<ImportBatch> {
     let bytes = std::fs::read(path).map_err(|e| AppError::io("Reading saved_accounts.json", &e))?;
-    let document: Value = serde_json::from_slice(&bytes)
-        .map_err(|e| AppError::new("EVANOVAR_INVALID", "Not An Evanovar File", "This is not a valid Evanovar RAM account file.").with_detail(e.to_string()))?;
+    let document: Value = serde_json::from_slice(&bytes).map_err(|e| {
+        AppError::new("EVANOVAR_INVALID", "Not An Evanovar File", "This is not a valid Evanovar RAM account file.")
+            .with_detail(e.to_string())
+    })?;
     let payload = decode_payload(&document, password, machine_id)?;
     Ok(batch_from_payload(&payload))
 }
@@ -34,33 +36,36 @@ fn decode_payload(document: &Value, password: Option<&str>, machine_id: Option<&
     let ciphertext = crypto::unb64(field(package, "ciphertext")?)?;
 
     // Password mode is marked by a `password_encoding` field.
-    if let Some(password) = password.filter(|_| package.get("password_encoding").is_some() || password.is_some()) {
-        if let Some(salt_hex) = document.get("salt").and_then(Value::as_str) {
-            let salt = crypto::python_lenient_b64(salt_hex)?;
-            let key = crypto::evanovar_pbkdf2(password.as_bytes(), &salt);
-            if let Ok(plain) = crypto::evanovar_decrypt(&key, &nonce, &tag, &ciphertext) {
+    if let Some(password) = password.filter(|_| package.get("password_encoding").is_some() || password.is_some())
+        && let Some(salt_hex) = document.get("salt").and_then(Value::as_str)
+    {
+        let salt = crypto::python_lenient_b64(salt_hex)?;
+        let key = crypto::evanovar_pbkdf2(password.as_bytes(), &salt);
+        if let Ok(plain) = crypto::evanovar_decrypt(&key, &nonce, &tag, &ciphertext) {
+            return parse_plain(&plain);
+        }
+        // Older builds derived the key from the Latin-1 bytes of the password.
+        if let Some(latin1) = to_latin1(password) {
+            let legacy = crypto::evanovar_pbkdf2(&latin1, &salt);
+            if let Ok(plain) = crypto::evanovar_decrypt(&legacy, &nonce, &tag, &ciphertext) {
                 return parse_plain(&plain);
             }
-            // Older builds derived the key from the Latin-1 bytes of the password.
-            if let Some(latin1) = to_latin1(password) {
-                let legacy = crypto::evanovar_pbkdf2(&latin1, &salt);
-                if let Ok(plain) = crypto::evanovar_decrypt(&legacy, &nonce, &tag, &ciphertext) {
-                    return parse_plain(&plain);
-                }
-            }
-            return Err(AppError::new("PASSWORD_INVALID", "Wrong Password", "The password did not unlock this Evanovar file."));
         }
+        return Err(AppError::new("PASSWORD_INVALID", "Wrong Password", "The password did not unlock this Evanovar file."));
     }
 
     // Hardware mode: the PBKDF2 secret is the machine id hex string.
-    let machine_id = machine_id.ok_or_else(|| AppError::new(
-        "EVANOVAR_HARDWARE",
-        "Hardware-Encrypted File",
-        "This file is tied to the computer that made it. Open Evanovar RAM there and export a password backup, then import that.",
-    ))?;
+    let machine_id = machine_id.ok_or_else(|| {
+        AppError::new(
+            "EVANOVAR_HARDWARE",
+            "Hardware-Encrypted File",
+            "This file is tied to the computer that made it. Open Evanovar RAM there and export a password backup, then import that.",
+        )
+    })?;
     let key = crypto::evanovar_pbkdf2(machine_id.as_bytes(), HARDWARE_SALT);
-    let plain = crypto::evanovar_decrypt(&key, &nonce, &tag, &ciphertext)
-        .map_err(|_| AppError::new("EVANOVAR_HARDWARE", "Could Not Decrypt", "The hardware key for this computer did not match the file."))?;
+    let plain = crypto::evanovar_decrypt(&key, &nonce, &tag, &ciphertext).map_err(|_| {
+        AppError::new("EVANOVAR_HARDWARE", "Could Not Decrypt", "The hardware key for this computer did not match the file.")
+    })?;
     parse_plain(&plain)
 }
 
@@ -96,41 +101,41 @@ fn batch_from_payload(payload: &Value) -> ImportBatch {
 
 /// Reads a sibling `groups.json`, `favorites.json` and `recent_games.json` if present.
 pub fn read_side_files(dir: &Path, batch: &mut ImportBatch) {
-    if let Ok(text) = std::fs::read_to_string(dir.join("groups.json")) {
-        if let Ok(Value::Object(map)) = serde_json::from_str::<Value>(&text) {
-            if let Some(groups) = map.get("groups").and_then(Value::as_array) {
-                batch.groups.extend(groups.iter().filter_map(|g| g.as_str().map(str::to_owned)));
-            }
-            if let Some(assignments) = map.get("assignments").and_then(Value::as_object) {
-                for account in &mut batch.accounts {
-                    if let Some(group) = assignments.get(&account.username).and_then(Value::as_str) {
-                        account.group = group.to_owned();
-                    }
+    if let Ok(text) = std::fs::read_to_string(dir.join("groups.json"))
+        && let Ok(Value::Object(map)) = serde_json::from_str::<Value>(&text)
+    {
+        if let Some(groups) = map.get("groups").and_then(Value::as_array) {
+            batch.groups.extend(groups.iter().filter_map(|g| g.as_str().map(str::to_owned)));
+        }
+        if let Some(assignments) = map.get("assignments").and_then(Value::as_object) {
+            for account in &mut batch.accounts {
+                if let Some(group) = assignments.get(&account.username).and_then(Value::as_str) {
+                    account.group = group.to_owned();
                 }
             }
         }
     }
-    if let Ok(text) = std::fs::read_to_string(dir.join("favorites.json")) {
-        if let Ok(Value::Array(items)) = serde_json::from_str::<Value>(&text) {
-            for item in items {
-                batch.favorites.push(Favorite {
-                    place_id: item.get("place_id").and_then(super::as_u64).unwrap_or(0),
-                    name: item.get("name").and_then(Value::as_str).unwrap_or_default().to_owned(),
-                    private_server: item.get("private_server").and_then(Value::as_str).unwrap_or_default().to_owned(),
-                });
-            }
+    if let Ok(text) = std::fs::read_to_string(dir.join("favorites.json"))
+        && let Ok(Value::Array(items)) = serde_json::from_str::<Value>(&text)
+    {
+        for item in items {
+            batch.favorites.push(Favorite {
+                place_id: item.get("place_id").and_then(super::as_u64).unwrap_or(0),
+                name: item.get("name").and_then(Value::as_str).unwrap_or_default().to_owned(),
+                private_server: item.get("private_server").and_then(Value::as_str).unwrap_or_default().to_owned(),
+            });
         }
     }
-    if let Ok(text) = std::fs::read_to_string(dir.join("recent_games.json")) {
-        if let Ok(Value::Array(items)) = serde_json::from_str::<Value>(&text) {
-            for item in items {
-                batch.recent_games.push(RecentGame {
-                    place_id: item.get("place_id").and_then(super::as_u64).unwrap_or(0),
-                    name: item.get("name").and_then(Value::as_str).unwrap_or_default().to_owned(),
-                    private_server: item.get("private_server").and_then(Value::as_str).unwrap_or_default().to_owned(),
-                    at: None,
-                });
-            }
+    if let Ok(text) = std::fs::read_to_string(dir.join("recent_games.json"))
+        && let Ok(Value::Array(items)) = serde_json::from_str::<Value>(&text)
+    {
+        for item in items {
+            batch.recent_games.push(RecentGame {
+                place_id: item.get("place_id").and_then(super::as_u64).unwrap_or(0),
+                name: item.get("name").and_then(Value::as_str).unwrap_or_default().to_owned(),
+                private_server: item.get("private_server").and_then(Value::as_str).unwrap_or_default().to_owned(),
+                at: None,
+            });
         }
     }
 }

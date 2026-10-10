@@ -19,13 +19,7 @@ pub type AppResult<T> = Result<T, AppError>;
 
 impl AppError {
     pub fn new(code: &str, title: &str, message: impl Into<String>) -> Self {
-        Self {
-            code: code.to_owned(),
-            title: title.to_owned(),
-            message: message.into(),
-            detail: String::new(),
-            retryable: false,
-        }
+        Self { code: code.to_owned(), title: title.to_owned(), message: message.into(), detail: String::new(), retryable: false }
     }
 
     pub fn with_detail(mut self, detail: impl Into<String>) -> Self {
@@ -39,17 +33,12 @@ impl AppError {
     }
 
     pub fn unexpected(context: &str, detail: impl fmt::Display) -> Self {
-        Self::new(
-            "UNEXPECTED_ERROR",
-            "Unexpected Error",
-            "An unexpected error occurred. The session log has the details.",
-        )
-        .with_detail(format!("{context}: {detail}"))
+        Self::new("UNEXPECTED_ERROR", "Unexpected Error", "An unexpected error occurred. The session log has the details.")
+            .with_detail(format!("{context}: {detail}"))
     }
 
     pub fn io(context: &str, err: &std::io::Error) -> Self {
-        Self::new("IO_ERROR", "File Error", format!("{context} failed."))
-            .with_detail(err.to_string())
+        Self::new("IO_ERROR", "File Error", format!("{context} failed.")).with_detail(err.to_string())
     }
 
     pub fn invalid(code: &str, message: impl Into<String>) -> Self {
@@ -57,11 +46,7 @@ impl AppError {
     }
 
     pub fn not_found(what: &str, name: &str) -> Self {
-        Self::new(
-            "NOT_FOUND",
-            &format!("{what} Not Found"),
-            format!("{what} '{name}' does not exist."),
-        )
+        Self::new("NOT_FOUND", &format!("{what} Not Found"), format!("{what} '{name}' does not exist."))
     }
 }
 

@@ -4,15 +4,15 @@
 pub mod error;
 #[macro_use]
 pub mod logging;
-pub mod paths;
-pub mod import;
-pub mod roblox;
-pub mod core;
-pub mod services;
-pub mod win;
-pub mod store;
 pub mod api;
+pub mod core;
+pub mod import;
+pub mod paths;
+pub mod roblox;
+pub mod services;
+pub mod store;
 pub mod ui;
+pub mod win;
 
 pub const APP_NAME: &str = "Nova RAM";
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");

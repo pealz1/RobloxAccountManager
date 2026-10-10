@@ -263,10 +263,7 @@ impl Default for Settings {
             api_expose_secrets: false,
             api_allowed_origins: Vec::new(),
             api_max_auth_failures: 10,
-            connectivity_check_urls: vec![
-                "https://www.google.com/generate_204".into(),
-                "https://www.cloudflare.com/cdn-cgi/trace".into(),
-            ],
+            connectivity_check_urls: vec!["https://www.google.com/generate_204".into(), "https://www.cloudflare.com/cdn-cgi/trace".into()],
         }
     }
 }
