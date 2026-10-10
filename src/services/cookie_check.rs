@@ -16,10 +16,18 @@ pub fn check_one(core: &Core, reference: &str) -> CookieStatus {
         let _ = core.set_cookie_status(reference, CookieStatus::Invalid);
         return CookieStatus::Invalid;
     }
-    match api::whoami(&account.cookie) {
+    // The cookie we are about to validate. The account may be re-logged with a new
+    // cookie while this network call is in flight, so every write below only applies
+    // when the stored cookie still matches this one — never stamping a verdict about
+    // the old cookie onto a freshly added one.
+    let checked = account.cookie.clone();
+    match api::whoami(&checked) {
         Ok(identity) => {
             let _ = core.edit(|data| {
                 if let Some(acc) = data.find_mut(reference) {
+                    if acc.cookie != checked {
+                        return; // superseded by a newer cookie
+                    }
                     acc.cookie_status = CookieStatus::Valid;
                     acc.cookie_checked_at = Some(chrono::Utc::now());
                     if identity.user_id > 0 {
@@ -32,7 +40,14 @@ pub fn check_one(core: &Core, reference: &str) -> CookieStatus {
             CookieStatus::Valid
         }
         Err(err) if err.code == "COOKIE_INVALID" => {
-            let _ = core.set_cookie_status(reference, CookieStatus::Invalid);
+            let _ = core.edit(|data| {
+                if let Some(acc) = data.find_mut(reference)
+                    && acc.cookie == checked
+                {
+                    acc.cookie_status = CookieStatus::Invalid;
+                    acc.cookie_checked_at = Some(chrono::Utc::now());
+                }
+            });
             CookieStatus::Invalid
         }
         // Network/rate-limit errors leave the status unchanged so a blip doesn't flag an account.

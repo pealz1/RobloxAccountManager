@@ -102,7 +102,13 @@ pub struct Worker {
 
 impl Worker {
     pub fn spawn(name: &str, stop: Arc<AtomicBool>, body: impl FnOnce() + Send + 'static) -> Worker {
-        let handle = std::thread::Builder::new().name(name.to_owned()).spawn(body).ok();
+        let handle = match std::thread::Builder::new().name(name.to_owned()).spawn(body) {
+            Ok(handle) => Some(handle),
+            Err(err) => {
+                crate::log_warn!("Background worker '{name}' could not start: {err}");
+                None
+            }
+        };
         Worker { stop, handle }
     }
 

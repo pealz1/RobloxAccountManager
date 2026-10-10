@@ -79,6 +79,9 @@ pub fn start(services: &Arc<Services>) {
 fn run(services: Arc<Services>, stop: &AtomicBool) {
     loop {
         let interval = Duration::from_secs(services.core.settings().instance_scan_secs.max(2) as u64);
+        // Pick up changes another process (the MCP server, a second window) made to
+        // the vault, so the GUI stays current without touching the file lock per frame.
+        services.core.refresh_from_disk();
         let (activity, map) = snapshot();
         services.live.set_activity(activity);
         services.live.set_instances(instances_from(&map));

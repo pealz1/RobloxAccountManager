@@ -142,24 +142,30 @@ fn cookie_body(app: &mut NovaApp, ui: &mut egui::Ui, dialog: &mut AddDialog) -> 
 
 fn user_pass_body(app: &mut NovaApp, ui: &mut egui::Ui, dialog: &mut AddDialog) -> bool {
     ui.label(
-        RichText::new("Sign in through a browser window. Nova never stores the password unless you keep it.")
-            .size(12.0)
-            .color(app.palette.muted),
+        RichText::new("Signing in with a username and password isn't available in this version yet.")
+            .size(13.0)
+            .strong()
+            .color(app.palette.text),
     );
     ui.add_space(6.0);
-    ui.add(egui::TextEdit::singleline(&mut dialog.user).hint_text("username").desired_width(f32::INFINITY));
-    ui.add(egui::TextEdit::singleline(&mut dialog.pass).password(true).hint_text("password").desired_width(f32::INFINITY));
-    ui.add_space(8.0);
     ui.label(
-        RichText::new(format!("{}  Browser sign-in uses your installed Chrome/Edge. Set it up in Settings.", egui_phosphor::regular::INFO))
-            .size(11.0)
-            .color(app.palette.faint),
+        RichText::new(format!(
+            "{}  Add accounts with the Cookie tab, or use Quick sign-in to approve a code on a device you're already signed in on — no password needed.",
+            egui_phosphor::regular::INFO
+        ))
+        .size(12.0)
+        .color(app.palette.muted),
     );
-    ui.add_space(8.0);
-    action_row(app, ui, dialog, "Open browser", |app, _| {
-        app.show_toast("Browser sign-in is set up under Settings → Sign-in", false);
-        false
-    })
+    ui.add_space(10.0);
+    ui.horizontal(|ui| {
+        if widgets::primary_button(ui, &app.palette, "Use Quick sign-in").clicked() {
+            dialog.tab = Tab::Quick;
+        }
+        if widgets::ghost_button(ui, &app.palette, "Use Cookie").clicked() {
+            dialog.tab = Tab::Cookie;
+        }
+    });
+    true
 }
 
 fn quick_body(app: &mut NovaApp, ui: &mut egui::Ui, dialog: &mut AddDialog) -> bool {

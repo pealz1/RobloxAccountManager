@@ -224,7 +224,7 @@ impl NovaApp {
                     if password.len() < 6 {
                         self.show_toast("Use at least 6 characters", true);
                     } else {
-                        self.switch_protection(Protection::Password, Some(&password));
+                        self.switch_protection(Protection::Password, Some(password.clone()));
                         self.group_input.clear();
                     }
                 }
@@ -308,11 +308,15 @@ impl NovaApp {
 
     // ---- Actions ----
 
-    fn switch_protection(&mut self, protection: Protection, password: Option<&str>) {
-        match self.core.set_protection(protection, password) {
-            Ok(()) => self.show_toast(format!("Vault now: {}", protection.label()), false),
-            Err(err) => self.show_toast(err.message, true),
-        }
+    /// Re-encrypts the vault off the UI thread (a password change runs Argon2).
+    fn switch_protection(&mut self, protection: Protection, password: Option<String>) {
+        self.show_toast("Changing vault encryption…", false);
+        self.sender.spawn(Arc::clone(&self.core), Arc::clone(&self.services), move |core, _| {
+            match core.set_protection(protection, password.as_deref()) {
+                Ok(()) => Msg::Toast(format!("Vault now: {}", protection.label()), false),
+                Err(err) => Msg::Toast(err.message, true),
+            }
+        });
     }
 
     fn check_updates_now(&mut self) {

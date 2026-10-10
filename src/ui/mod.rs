@@ -283,8 +283,11 @@ impl NovaApp {
                 )
                 .clicked()
             {
-                let (closed, remaining) = crate::win::process::kill_all();
-                self.show_toast(format!("Closed {closed} client(s), {remaining} remaining"), remaining > 0);
+                // kill_all waits up to a few seconds per process, so run it off the UI thread.
+                self.sender.spawn(Arc::clone(&self.core), Arc::clone(&self.services), |_, _| {
+                    let (closed, remaining) = crate::win::process::kill_all();
+                    Msg::Toast(format!("Closed {closed} client(s), {remaining} remaining"), remaining > 0)
+                });
             }
         });
     }

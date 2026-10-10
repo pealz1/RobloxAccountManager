@@ -96,6 +96,13 @@ impl Vault {
         read_file(&path).or_else(|_| read_file(&backup_path(&path))).ok().map(|f| f.protection)
     }
 
+    /// Whether a vault file (or its backup) is present on disk. Checks existence only,
+    /// so a present-but-unreadable vault still counts — callers must not create over it.
+    pub fn exists(dir: &Path) -> bool {
+        let path = Self::path_in(dir);
+        path.exists() || backup_path(&path).exists()
+    }
+
     pub fn create(dir: &Path, protection: Protection, password: Option<&str>) -> AppResult<Vault> {
         let key = make_key(protection, password)?;
         let mut vault =
@@ -204,10 +211,13 @@ impl Vault {
 
     /// Re-encrypts the vault with a different protection.
     pub fn set_protection(&mut self, protection: Protection, password: Option<&str>) -> AppResult<()> {
+        // Derive the new key (Argon2 for a password) BEFORE taking the cross-process
+        // file lock, so the expensive KDF doesn't block other processes' writes.
+        let new_key = make_key(protection, password)?;
         let _guard = self.lock()?;
         self.refresh()?;
         let previous = self.key.clone();
-        self.key = make_key(protection, password)?;
+        self.key = new_key;
         let data = (*self.data).clone();
         if let Err(err) = self.write(&data) {
             self.key = previous;
