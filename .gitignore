@@ -26,3 +26,6 @@ AGENTS.md
 .agents/
 .remember/
 PLAN.md
+
+# Scratch PR body (not part of the project)
+.github/PR_BODY.md
