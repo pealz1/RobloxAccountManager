@@ -10,7 +10,7 @@
     }
   },
   "password": {
-    "password": "pässwörd-123",
+    "password": "pÃ¤sswÃ¶rd-123",
     "salt_config": "2b5ed62a3d8e872a102817f010d0d5a16800b90b853902d32f2b9510a232c288",
     "key_hex": "bbf73152eb4d3e7c08ebe1763a45477ff3cc858cbc34da212a97cef93fb82f9f",
     "package": {
@@ -21,7 +21,7 @@
     }
   },
   "password_legacy": {
-    "password": "pässwörd-123",
+    "password": "pÃ¤sswÃ¶rd-123",
     "salt_config": "2b5ed62a3d8e872a102817f010d0d5a16800b90b853902d32f2b9510a232c288",
     "package": {
       "nonce": "RTmH9q27Q6cH6l/napsItw==",
@@ -39,7 +39,7 @@
         "username": "alice",
         "cookie": "_|WARNING:-test|abc",
         "user_id": 1,
-        "note": "né",
+        "note": "nÃ©",
         "cookie_valid": true
       }
     },
