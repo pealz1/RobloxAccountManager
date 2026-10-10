@@ -7,6 +7,7 @@ pub mod logging;
 pub mod paths;
 pub mod import;
 pub mod roblox;
+pub mod win;
 pub mod store;
 
 pub const APP_NAME: &str = "Nova RAM";
