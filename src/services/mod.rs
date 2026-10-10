@@ -8,6 +8,7 @@ pub mod cookie_check;
 pub mod history;
 pub mod instances;
 pub mod renamer;
+pub mod roblox_settings;
 pub mod updater;
 
 use crate::core::Core;

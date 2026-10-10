@@ -26,6 +26,8 @@ impl NovaApp {
             ui.add_space(12.0);
             dirty |= self.windows_section(ui, &mut settings);
             ui.add_space(12.0);
+            dirty |= self.roblox_settings_section(ui, &mut settings);
+            ui.add_space(12.0);
             self.updates_section(ui, &settings);
             ui.add_space(12.0);
             self.security_section(ui);
@@ -43,6 +45,48 @@ impl NovaApp {
             self.palette = theme::palette(settings.theme, &settings.accent, self.system_dark);
             theme::apply(ui.ctx(), &palette, settings.ui_scale);
         }
+    }
+
+    fn roblox_settings_section(&self, ui: &mut egui::Ui, s: &mut Settings) -> bool {
+        let palette = self.palette;
+        let mut dirty = false;
+        widgets::card(ui, &palette, |ui| {
+            widgets::section(ui, &palette, "Roblox settings (applied before launch)");
+            let r = &mut s.roblox;
+            widgets::setting_row(ui, &palette, "Framerate cap", "Max FPS the client targets", |ui| {
+                dirty |= ui.add(egui::Checkbox::without_text(&mut r.framerate_cap_enabled)).changed();
+                if r.framerate_cap_enabled {
+                    dirty |= ui.add(egui::DragValue::new(&mut r.framerate_cap).range(1..=1000)).changed();
+                }
+            });
+            widgets::setting_row(ui, &palette, "Master volume", "0.0 – 1.0", |ui| {
+                dirty |= ui.add(egui::Checkbox::without_text(&mut r.master_volume_enabled)).changed();
+                if r.master_volume_enabled {
+                    dirty |= ui.add(egui::Slider::new(&mut r.master_volume, 0.0..=1.0).step_by(0.05)).changed();
+                }
+            });
+            widgets::setting_row(ui, &palette, "Start quality", "0 = Automatic, 1–10 fixed level", |ui| {
+                dirty |= ui.add(egui::Checkbox::without_text(&mut r.graphics_quality_enabled)).changed();
+                if r.graphics_quality_enabled {
+                    dirty |= ui.add(egui::DragValue::new(&mut r.graphics_quality).range(0..=10)).changed();
+                }
+            });
+            widgets::setting_row(ui, &palette, "Settings file", "Leave blank for the default location", |ui| {
+                if ui.button(egui_phosphor::regular::FOLDER_OPEN).clicked()
+                    && let Some(path) = rfd::FileDialog::new().add_filter("Roblox settings", &["xml"]).pick_file()
+                {
+                    r.settings_path = path.display().to_string();
+                    dirty = true;
+                }
+                dirty |= ui.add(egui::TextEdit::singleline(&mut r.settings_path).desired_width(180.0)).changed();
+            });
+            ui.label(
+                RichText::new("Only the three basic presets are applied. The full advanced editor isn't ported yet.")
+                    .size(11.0)
+                    .color(palette.faint),
+            );
+        });
+        dirty
     }
 
     fn appearance(&self, ui: &mut egui::Ui, s: &mut Settings) -> bool {

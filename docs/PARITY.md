@@ -32,7 +32,7 @@ are not in the Rust version yet, so nothing is silently claimed.
 | `features/presence.py` | Ported | `src/win/process.rs`, `src/roblox/logs.rs`, `src/services/activity.rs` |
 | `features/private_servers.py` | Ported + extended | `src/roblox/private_servers.rs`, Private Servers page |
 | `features/roblox_downloader.py` | **Not yet ported** | Downloading a Roblox Player deployment is not implemented yet. |
-| `features/roblox_settings.py` | Partial | The preset fields (framerate cap, volume, quality, auto-apply) exist in `src/store/settings.rs`; applying them to `GlobalBasicSettings_13.xml` before launch is not wired up yet, and the searchable advanced editor is not ported yet. |
+| `features/roblox_settings.py` | Partial | The preset fields (framerate cap, volume, quality, auto-apply) are applied to `GlobalBasicSettings_13.xml` before launch (`src/services/roblox_settings.rs`). The searchable advanced editor is not ported yet. |
 | `features/settings_store.py` | Ported | `src/store/settings.rs` |
 | `features/updater.py` | Rewritten | `src/services/updater.rs` (fork releases only, SHA-256 verified, channel, rollback) |
 | `features/websocket_server.py` | Replaced | Local REST API (`src/api/http.rs`) + MCP server (`src/api/mcp.rs`). Same protections: loopback only, token auth, browser origins refused, auth-failure lockout. |
@@ -70,7 +70,7 @@ nothing is silently assumed present:
 - **Portable Chromium download** (only needed for the browser flows above).
 - **Roblox Downloader** (fetching a Roblox Player deployment).
 - **Advanced Roblox settings editor** (searchable `GlobalBasicSettings_13.xml`
-  editor). The basic presets (framerate cap, master volume, start quality) are
-  modelled in settings but are not yet applied before launch; the full advanced editor is also pending.
+  editor). The basic presets (framerate cap, master volume, start quality) are applied
+  before launch. Only the full searchable advanced `GlobalBasicSettings_13.xml` editor is pending.
 
 Everything else in the table above is implemented.

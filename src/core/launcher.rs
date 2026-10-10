@@ -44,6 +44,11 @@ impl Core {
             ));
         }
         let settings = self.settings();
+        // Apply the basic Roblox settings presets before the client starts. Best-effort:
+        // a problem here is logged but does not block the launch.
+        if let Err(err) = crate::services::roblox_settings::apply_presets(&settings.roblox) {
+            crate::log_warn!("Could not apply Roblox settings presets: {err}");
+        }
         let launched = launch::launch(&account.cookie, request, settings.launcher, &settings.custom_launcher_path)?;
         // Launching proves the cookie worked.
         let _ = self.edit(|data| {
