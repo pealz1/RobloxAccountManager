@@ -11,6 +11,8 @@ pub mod core;
 pub mod services;
 pub mod win;
 pub mod store;
+pub mod api;
+pub mod ui;
 
 pub const APP_NAME: &str = "Nova RAM";
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");

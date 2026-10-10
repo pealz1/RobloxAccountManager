@@ -135,6 +135,7 @@ pub struct Services {
     pub avatars: Arc<avatars::AvatarCache>,
     workers: Mutex<Vec<Worker>>,
     repaint: Mutex<Option<Box<dyn Fn() + Send + Sync>>>,
+    api: Mutex<Option<crate::api::http::ApiHandle>>,
 }
 
 impl Services {
@@ -146,6 +147,7 @@ impl Services {
             avatars: Arc::new(avatars::AvatarCache::new(cache_days)),
             workers: Mutex::new(Vec::new()),
             repaint: Mutex::new(None),
+            api: Mutex::new(None),
         })
     }
 
@@ -164,16 +166,32 @@ impl Services {
         self.workers.lock().unwrap_or_else(|p| p.into_inner()).push(worker);
     }
 
-    /// Starts the always-on background workers.
+    /// Starts the always-on background workers and services.
     pub fn start_background(self: &Arc<Self>) {
-        activity::start(self);
-        if self.core.settings().check_updates {
+        let settings = self.core.settings();
+        if settings.activity_monitor {
+            activity::start(self);
+        }
+        if settings.track_server_history {
+            history::start(self);
+        }
+        if settings.rename_windows {
+            renamer::start(self);
+        }
+        if settings.validate_cookies_on_startup {
+            cookie_check::start_all(self);
+        }
+        if settings.check_updates {
             updater::start_check(self);
+        }
+        if let Some(handle) = crate::api::start_http(Arc::clone(&self.core)) {
+            *self.api.lock().unwrap_or_else(|p| p.into_inner()) = Some(handle);
         }
     }
 
-    /// Stops every worker (called on shutdown).
+    /// Stops every worker and the API server (called on shutdown).
     pub fn stop_all(&self) {
+        self.api.lock().unwrap_or_else(|p| p.into_inner()).take();
         let workers = std::mem::take(&mut *self.workers.lock().unwrap_or_else(|p| p.into_inner()));
         for worker in workers {
             worker.stop();
