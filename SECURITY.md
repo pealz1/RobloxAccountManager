@@ -1,48 +1,34 @@
 # Security Policy
 
-Evanovar RAM handles sensitive account information, including Roblox session
-cookies, saved passwords, and notes. Please report vulnerabilities privately so
-they can be investigated before details are made public.
+Nova RAM handles sensitive data: Roblox session cookies, optionally saved
+passwords, and notes. Please report vulnerabilities privately so they can be
+fixed before details are public.
 
-## Supported Versions
+## How Nova RAM protects local data
 
-Security fixes are provided in the latest stable release. Older versions do not
-receive separate security updates.
+- Accounts live in an **encrypted vault** (`vault.json`): Windows DPAPI tied to
+  your Windows account, or Argon2id + AES-256-GCM behind a password. "No
+  encryption" is available but must be chosen explicitly.
+- The vault is written **atomically** with a `.bak` copy and a cross-process lock,
+  so a crash or a second instance can't corrupt or lose it.
+- Logs are **redacted**: cookies, passwords, tokens and private-server codes are
+  stripped before anything is written to disk.
+- The **local API** binds `127.0.0.1` only, requires a bearer token, refuses any
+  request with a browser `Origin`, and locks out after repeated bad tokens.
+- The **MCP server** and API never return cookies or passwords unless you turn on
+  *Expose secrets*, and destructive actions require an explicit confirmation.
+- The **updater** downloads only from this repository's GitHub releases and
+  verifies a published SHA-256 before replacing the executable, keeping a rollback
+  copy.
 
-| Version | Supported |
-| ------- | --------- |
-| Latest stable release | :white_check_mark: |
-| Older releases | :x: |
+## Supported versions
 
-## Reporting a Vulnerability
+Security fixes land in the latest release. Older releases are not patched
+separately.
+
+## Reporting a vulnerability
 
 Use GitHub's **Report a vulnerability** option on the repository's
-[Security page](https://github.com/evanovar/RobloxAccountManager/security) when
-available. These reports are private.
-
-If that option is unavailable, create a ticket in the
-[Discord community](https://discord.gg/SZaZU8zwZA) for a private reporting channel.
-
-### What to Include
-
-- The affected application version.
-- A description of the vulnerability and its potential impact.
-- Clear reproduction steps or a minimal proof of concept.
-- Relevant code locations, redacted logs, and a suggested fix, if available.
-
-**Never include real session cookies, passwords, webhook URLs, account files, or
-other secrets.** A report about Roblox itself should go to Roblox's security
-reporting channel.
-
-### What to Expect
-
-Reports are reviewed based on severity and maintainer availability. There is
-no guaranteed response time.
-
-For confirmed vulnerabilities, the maintainer will coordinate a fix or
-mitigation and disclosure when appropriate. Confirmed vulnerabilities may be
-documented in a GitHub Security Advisory or release notes once a fix or
-mitigation is available.
-
-Please coordinate public disclosure with the maintainer so users have an
-opportunity to update. Reporter credit can be included with your permission.
+[Security page](https://github.com/pealz1/RobloxAccountManager/security/advisories/new).
+Please include steps to reproduce and the impact. We aim to acknowledge reports
+quickly and will credit reporters who want it once a fix ships.

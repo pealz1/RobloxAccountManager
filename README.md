@@ -1,234 +1,116 @@
-[![Latest release](https://img.shields.io/github/v/release/evanovar/RobloxAccountManager?label=release)](https://github.com/evanovar/RobloxAccountManager/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/evanovar/RobloxAccountManager/total)](https://github.com/evanovar/RobloxAccountManager/releases)
-[![License](https://img.shields.io/github/license/evanovar/RobloxAccountManager)](LICENSE)
-[![Discord](https://img.shields.io/discord/1436930121897476140?label=Discord)](https://discord.gg/SZaZU8zwZA)
-[![Website](https://img.shields.io/badge/website-evanovarram.com-1F58FF)](https://www.evanovarram.com/)
-![OS](https://img.shields.io/badge/os-windows-0078D4)<br>
-[![Download](https://img.shields.io/badge/Download-280ab?style=for-the-badge)](https://github.com/evanovar/RobloxAccountManager/releases/latest)
+[![CI](https://img.shields.io/github/actions/workflow/status/pealz1/RobloxAccountManager/ci.yml?label=ci)](https://github.com/pealz1/RobloxAccountManager/actions)
+[![Latest release](https://img.shields.io/github/v/release/pealz1/RobloxAccountManager?label=release)](https://github.com/pealz1/RobloxAccountManager/releases/latest)
+[![License](https://img.shields.io/github/license/pealz1/RobloxAccountManager)](LICENSE)
+![OS](https://img.shields.io/badge/os-windows-0078D4)
+![Built with Rust](https://img.shields.io/badge/built%20with-rust-ce412b)
+
+# Nova RAM
+
+**Nova RAM** is a fast, native Windows app for managing many Roblox accounts:
+organize them, launch them into games and private servers, run multiple clients
+at once, and automate the tedious parts. It is a full **Rust** rewrite — one small
+static executable, no runtime to install, instant startup.
+
+It is a fork of [Evanovar RAM](https://github.com/evanovar/RobloxAccountManager)
+(a Python app), which was itself inspired by
+[ic3w0lf's original Roblox Account Manager](https://github.com/ic3w0lf22/Roblox-Account-Manager).
+Nova RAM can import directly from both.
 
 > [!IMPORTANT]
-> Before you see this as a **"Virus"** or **"Unofficial,"** please read:
-> - **Project Status:** This project was inspired by the original Roblox Account Manager by ic3w0lf22. I recreated it in Python as a personal project because I thought it would be fun to build and learn from. It is not intended to be an official continuation of the original project.<br><br>
-> - **100% Open Source:** Every line of code is transparent and available for everyone. If you don't trust the .exe, you are encouraged to run the script directly from the source code.<br><br>
-> - **Integrity:** The standalone .exe in the releases is compiled directly from this code with zero alterations.
-
-# Evanovar RAM
-
-Evanovar RAM is an open source Windows desktop application for organizing Roblox accounts, launching multiple clients, and automating common account management tasks. It combines encrypted local storage, multi-account launching, process controls, Roblox settings management, and diagnostics in one interface.
-
-[Download the latest release](https://github.com/evanovar/RobloxAccountManager/releases/latest) | [Documentation](https://www.evanovarram.com/documentation/developer) | [Discord](https://discord.gg/SZaZU8zwZA) | [Website](https://www.evanovarram.com/)
-
-![Evanovar RAM account manager interface](https://github.com/user-attachments/assets/6dab4d69-11fd-47d0-9348-db2aef5211fb)
-
-## Table of contents
-
-- [Installation](#installation)
-- [Features](#features)
-- [Data and privacy](#data-and-privacy)
-- [Build from source](#build-from-source)
-- [System changes and uninstallation](#system-changes-and-uninstallation)
-- [Disclaimer](#disclaimer)
-- [Contributing](#contributing)
-- [Support](#support)
-- [License](#license)
+> - **Open source.** Every line is here to read; if you don't trust the `.exe`, build it yourself.
+> - **Reproducible.** Release binaries are built from the tagged source by GitHub Actions and ship with a published SHA-256.
+> - **Unsigned.** Windows or antivirus may warn about a new unsigned binary. That is expected for small open-source releases.
 
 ## Highlights
 
-- Organize accounts with groups, notes, avatars, drag-and-drop ordering, and multi-select actions.
-- Launch one or many accounts into public games, private servers, specific jobs, or small servers.
-- Run multiple Roblox clients using the default mutex method or Handle64 mode.
-- Monitor and recover sessions with Auto-Rejoin, Anti-AFK, activity data, and structured diagnostics.
-- Manage Roblox windows with custom titles, headless mode, global grid tiling, and process controls.
-- Edit Roblox settings through basic presets or a searchable advanced settings editor.
-- Protect saved account data with hardware encryption or password encryption.
-- Use Chrome, Firefox, Edge, or the optional portable Chromium browser for account login flows.
+- **Accounts** — groups, notes, aliases, stars, avatars, search, and multi-select
+  actions. Status and live memory use show next to each account.
+- **Launching** — join a Place, a private server (VIP/share link or code), a
+  specific Job ID, the emptiest public server, another user's game, or the home
+  page. A built-in game search resolves Place IDs by name.
+- **Servers** *(new)* — a searchable history of every server each account has
+  joined, read from the Roblox logs, with one-click rejoin.
+- **Private Servers** — list the servers an account owns, refresh join links, save
+  the ones you use, and launch straight into them.
+- **Multi Roblox** — run many clients with the mutex method (no admin) or by
+  closing singleton handles in-process (admin), plus the Error-773 cookie-lock fix.
+  No external `handle64.exe` download.
+- **Window tools** — tile all clients into a clean grid (fixed so windows never
+  hide behind the taskbar), rename windows per account, hide/show/close clients.
+- **Auto-Rejoin & Anti-AFK** — keep accounts in a game and nudge them so they
+  aren't kicked for inactivity.
+- **Import** — cookies, `user:pass`, CSV, JSON, Evanovar `saved_accounts.json`
+  (incl. password/hardware), ic3w0lf `AccountData.json` (plain/DPAPI/password), and
+  portable backups.
+- **Automation** — a loopback HTTP API and an **MCP server** so tools like Claude
+  and Codex can list, add, launch and manage accounts. See [docs/API.md](docs/API.md).
+- **Security** — accounts are stored in an encrypted vault (Windows account key or
+  a password), written atomically with a backup copy.
 
 ## Installation
 
-### Windows executable
+1. Open the [latest release](https://github.com/pealz1/RobloxAccountManager/releases/latest).
+2. Download `NovaRAM-v<version>.exe` (and, if you like, verify it against the
+   published `.sha256`).
+3. Put it in a folder where it may keep its data, and run it.
 
-1. Open the [latest release](https://github.com/evanovar/RobloxAccountManager/releases/latest).
-2. Download `EvanovarRAM-v<version>.exe`.
-3. Place it in a folder where the application can keep its local data.
-4. Run the executable.
+## Run from source
 
-The release executable is unsigned. Windows or antivirus software may display a reputation warning for new PyInstaller builds. Releases are built from the tagged source by the repository's GitHub Actions workflow. You can inspect the source and run it directly if preferred.
-
-### Run from source
-
-Requirements:
-
-- Windows 10 or Windows 11
-- Python 3.15 (uv installs the required version automatically)
-- [uv](https://docs.astral.sh/uv/) 0.13.0 or newer
-- Git
-- Chrome, Firefox, or Edge for browser login, unless portable Chromium is installed from the application
+Requirements: Windows 10/11 and a [Rust toolchain](https://rustup.rs).
 
 ```powershell
-git clone https://github.com/evanovar/RobloxAccountManager.git
+git clone https://github.com/pealz1/RobloxAccountManager.git
 cd RobloxAccountManager
-uv sync --locked
-uv run python src/main.py
+cargo run --release
 ```
 
-## Features
+The build produces a single `target/release/NovaRAM.exe`.
 
-### Account management
+## Data & privacy
 
-| Feature | Description |
+Nova RAM stores everything under `NovaData` next to the executable. Put it
+elsewhere with `--data-dir "D:/Profiles/Alt"` or the `NOVA_DATA_DIR` environment
+variable (handy for separate profiles).
+
+Network use is limited to what you ask for: Roblox APIs for account, game,
+presence, launch and private-server features; GitHub for update checks; and the
+connectivity check used by Auto-Rejoin. Account cookies never leave your machine
+unless you explicitly enable the API and turn on *Expose secrets*.
+
+## Command-line
+
+| Flag | Effect |
 | :--- | :--- |
-| Browser login | Add an account through a supported browser and save it to the local account list. |
-| Cookie import | Import one or multiple `.ROBLOSECURITY` cookies. |
-| User and password import | Import credentials manually or from a `User:Pass` text file. Login sessions run in batches of up to five browsers, which can be lowered to as few as one under Settings > General. |
-| Account Creator | Create up to 100 accounts in one operation with up to five browser sessions, an optional custom prefix, and an optional shared password. |
-| JavaScript login | Open multiple browser sessions and run custom JavaScript for advanced login workflows. |
-| Account search | Filter the list by username, note, group or user ID with the search box above the list (Ctrl+F focuses it, Esc clears it). Every word has to match. |
-| Groups and notes | Organize accounts into groups and assign notes to one or multiple selected accounts. |
-| Account list controls | Use avatars, drag-and-drop ordering, multi-select actions, refresh, deletion, and controlled password or cookie copying. |
-| Cookie status | Detect unauthorized cookies while keeping rate limits and temporary validation failures separate from invalid accounts. The startup check and the delay between accounts can be changed under Settings > General. |
-| Avatar cache | Avatars are saved locally and downloaded again once they are 7 days old (change it under Settings > General, 0 keeps them forever). If a refresh fails the older copy is still shown, and copies for accounts that no longer exist are cleaned up. |
-| Activity data | Display online status, Roblox memory usage, and CPU usage beside saved accounts. |
-
-### Game launching
-
-| Feature | Description |
-| :--- | :--- |
-| Place launch | Launch one or multiple selected accounts into a Place ID. |
-| Private servers | Resolve current and legacy private server links. A Place ID inside the link is used when the Place ID field is empty. |
-| Join User | Resolve a username or user ID and join the user's current game when permitted. |
-| Job ID | Join a specific running server by Place ID and Job ID. |
-| Small Server | Find and join a server with a low player count. |
-| Game favorites | Save a Place ID with its optional private server link, select it from the Place ID list, or remove it from the context menu. |
-| Recent games | Save recent public and private server launches. Private entries are marked with `[P]`. |
-| Launch delay | Add a configurable delay between accounts during bulk launches. |
-| Launcher selection | Use Automatic, Bloxstrap, Fishstrap, Froststrap, Roblox Client, or a custom executable. |
-
-### Multi Roblox and window management
-
-| Feature | Description |
-| :--- | :--- |
-| Default Multi Roblox | Pre-create the Roblox singleton mutex before clients launch. Existing Roblox clients must be closed before enabling this mode. |
-| Handle64 mode | Detect validated Roblox game processes and close their singleton handles with retry handling. Administrator access is required. |
-| Error 773 protection | Lock `RobloxCookies.dat` when possible while Multi Roblox is active. |
-| Rename Roblox windows | Continuously map Roblox processes to accounts and rename windows to the account username or note. |
-| Window Grid | Arrange visible Roblox windows into an equal grid with a customizable global keyboard shortcut. |
-| Headless Manager | List running Roblox clients and hide or show selected windows. Hidden windows are restored when the application exits. The scan interval (3 to 60 seconds, 10 by default) can be changed under Settings > Roblox. |
-| Kill all Roblox processes | Close every validated Roblox game client from General settings. |
-| Roblox Installer Fix | Temporarily quarantine Roblox installer executables to prevent installer popups, then restore them on exit. |
-| RAM optimization | Optionally trim the working set of detected Roblox clients to a configured target. |
-
-### Auto-Rejoin and Anti-AFK
-
-| Feature | Description |
-| :--- | :--- |
-| Per-account Auto-Rejoin | Monitor configured accounts and relaunch them after a client exits or disconnects. |
-| Flexible destinations | Configure a Place ID, private server, or Job ID for each Auto-Rejoin entry. |
-| Process cleanup | Track account processes and close stale disconnected clients before relaunching. |
-| Network handling | Wait for connectivity and stagger relaunch attempts to reduce duplicate clients. |
-| Anti-AFK actions | Record a keyboard or mouse action, press count, and maintenance interval. |
-| Headless support | Temporarily restore hidden Roblox windows for Anti-AFK maintenance, then return them to their previous state. |
-
-### Roblox tools and settings
-
-| Feature | Description |
-| :--- | :--- |
-| Basic Roblox settings | Enable presets for Framerate Cap, Master Volume, and Start Quality. Enabled presets apply before Roblox launches. |
-| Advanced settings editor | Search and edit values from `GlobalBasicSettings_13.xml` through a local settings profile. |
-| Advanced Auto Apply | Apply the saved advanced profile on application startup and before Roblox launches, with basic presets taking priority. |
-| Roblox Downloader | Download the latest LIVE Windows Roblox Player deployment or a specific version hash to a chosen folder. |
-| Portable Chromium | Download or reinstall the latest supported Chromium build and its matching driver. |
-| Browser selection | Choose Chrome, Firefox, Edge, or portable Chromium for automated browser flows. Brave and Opera GX users can use portable Chromium. |
-
-### Application controls and integrations
-
-| Feature | Description |
-| :--- | :--- |
-| Smooth animations | Buttons light up when you point at or click them and pages fade in. This can be turned off under Settings > General, and it is off automatically when Windows animations are off. |
-| Loading screen | A small window with the version and a progress bar shows while the app starts and fades into the main window. It can be turned off under Settings > General. |
-| Color themes | Pick one of eight color presets (Default, Midnight, AMOLED Black, Nord, Dracula, Solarized Dark, Forest, Rose) and optionally your own accent color under Settings > Themes, with a live preview. The choice is applied the next time the application starts. |
-| System tray | Hide the main window to the system tray, restore it from the tray icon, or exit from the tray menu. |
-| Windows startup | Optionally start Evanovar RAM with Windows and add a Start Menu shortcut. |
-| Update manager | Check GitHub releases on startup or with Check for Updates Now, read the release notes, and skip a version you do not want. Downloads are verified, installed with a backup that is restored if anything fails, and the application starts again by itself. |
-| Discord webhooks | Send selected log levels, Auto-Rejoin events, optional mentions, and periodic screenshots to a configured webhook. |
-| WebSocket server | Run an optional local command server with a configurable port and encrypted password storage. Password-protected commands use `AUTH <password> | <command>`. Connections from web pages are refused unless the page origin is listed under `websocket_allowed_origins` in `AccountManagerData/ui_settings.json`. After 10 wrong passwords within a minute, further attempts are refused for a while, and `websocket_max_auth_failures` in the same file changes that limit (0 turns it off). |
-| Console | Review timestamped, color-coded application output and copy or clear the current console view. |
-| Structured errors | Show specific error codes and technical details instead of generic failure messages. |
-| Crash diagnostics | Save timestamped session and crash logs under `AccountManagerData/logs`. Error dialogs can copy the message or the full log. Only the newest 20 logs of each kind are kept by default, which can be changed under Settings > General. |
-
-### Security and local data
-
-| Feature | Description |
-| :--- | :--- |
-| Hardware encryption | Encrypt saved accounts with a key tied to the current Windows machine. No password is required at startup. |
-| Password encryption | Encrypt saved accounts with a user-provided password. |
-| No encryption | Store account data without encryption when explicitly selected. |
-| Encryption switching | Re-encrypt saved accounts and secure settings when changing encryption methods. |
-| Encryption status | Display the active hardware, password, or unencrypted state beside the account list. |
-| Account backup | Export all accounts to a file protected by a password you choose and import them again from Settings > Misc, for example to move them to another computer. Existing accounts are kept unless you choose to replace them. |
-| Data removal | Wipe local application data from Settings > Misc. |
-
-## Data and privacy
-
-Evanovar RAM stores its persistent data in `AccountManagerData`. This includes saved accounts, settings, groups, recent games, local Roblox settings, avatar cache, and diagnostic logs.
-
-By default this folder is created next to the application. To keep the data somewhere else, or to run separate profiles side by side, start the application with `--data-dir "D:/Profiles/Alt"` or set the `RAM_DATA_DIR` environment variable. The option wins over the variable, and relative paths, `~` and `%VARIABLES%` are expanded.
-
-The application does not include hidden telemetry, advertising SDKs, or analytics tracking. Network communication is limited to enabled or requested functionality:
-
-- Roblox API requests for account, game, presence, authentication, and download features.
-- GitHub requests for release and update checks.
-- Connectivity checks used by Auto-Rejoin. They use Google and Cloudflare by default, and `connectivity_check_urls` in `AccountManagerData/ui_settings.json` can replace them with your own list of addresses.
-
-Account cookies and stored WebSocket passwords remain local unless the user explicitly enables a feature that sends related data elsewhere.
-
-## Build from source
-
-Install the locked runtime and build dependencies, then run the shared build script:
-
-```powershell
-uv sync --locked --group build
-uv run --no-sync python scripts/build.py
-```
-
-The executable is written to `dist/EvanovarRAM.exe`. Build configuration lives in `packaging/EvanovarRAM.spec`, and version metadata is generated during the build. Release builds also create `dist/EvanovarRAM-v<version>.exe` for GitHub Releases.
-
-`src/utils/version.py` is the single source of truth for the application version. Release tags must match `APP_VERSION`.
-
-## System changes and uninstallation
-
-Depending on enabled features, Evanovar RAM can:
-
-- Create and update files under `AccountManagerData`.
-- Register or remove Windows startup and Start Menu entries.
-- Download portable Chromium, Handle64, or Roblox deployment files when requested.
-- Temporarily mark Roblox settings as read-only when Advanced Auto Apply is enabled.
-- Temporarily move Roblox installer files into the application quarantine folder.
-
-To uninstall:
-
-1. Exit the application from the window or system tray.
-2. Delete the application folder or executable.
-3. Delete `AccountManagerData` to remove saved accounts, settings, and logs.
-4. Remove any startup or Start Menu entry that was enabled in the application.
-
-## Disclaimer
-
-This project is provided for educational and account management purposes. Users are responsible for complying with Roblox's Terms of Use and all applicable rules. The project maintainers are not responsible for account actions, moderation, data loss, or other consequences caused by use of the application.
+| `--data-dir <path>` | Use a specific data folder |
+| `--mcp` | Run the MCP server over stdio (for AI tools) |
+| `--version` | Print the version and exit |
 
 ## Contributing
 
-Issues and pull requests are welcome. Keep changes focused, describe how they were tested, and avoid committing files from `AccountManagerData`.
+Issues and pull requests are welcome. Before opening a PR, run:
 
-Before opening a pull request, run the tests with `uv run --no-sync python scripts/run_tests.py --all`.
-Use `--list` to see available tests, `--test <module-or-test-id>` for an individual
-selection, or `--suite unit`, `--suite ui`, or `--suite integration` to choose a suite.
+```powershell
+cargo fmt --check
+cargo clippy --all-targets -- -D warnings
+cargo test --all
+```
 
-## Support
+[docs/PARITY.md](docs/PARITY.md) maps every module of the original Python app to
+its place here.
 
-- [Discord community](https://discord.gg/SZaZU8zwZA)
-- [Documentation](https://evanovars-roblox-account-manager.gitbook.io/evanovars-ram)
-- [GitHub issues](https://github.com/evanovar/RobloxAccountManager/issues)
+## Relationship to upstream
+
+Because Nova RAM is a full-language rewrite, upstream changes can't be merged as
+diffs. A scheduled job watches `evanovar/RobloxAccountManager` and opens an issue
+listing new upstream commits worth porting, so nothing is silently missed.
+
+## Disclaimer
+
+Provided for account-management and educational purposes. You are responsible for
+following Roblox's Terms of Use. The maintainers are not responsible for account
+actions, moderation, or data loss.
 
 ## License
 
-Evanovar RAM is available under the [GNU General Public License v3.0](LICENSE).
+Nova RAM is licensed under the [GNU General Public License v3.0](LICENSE), the same
+license as the projects it builds on.
