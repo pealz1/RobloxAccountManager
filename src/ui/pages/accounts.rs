@@ -15,11 +15,13 @@ impl NovaApp {
         ui.add_space(8.0);
 
         let available = ui.available_height();
+        let panel_width = 320.0_f32;
         ui.horizontal_top(|ui| {
-            let list_width = (ui.available_width() - 300.0).max(360.0);
-            ui.allocate_ui(Vec2::new(list_width, available), |ui| self.account_list(ui));
+            let list_width = (ui.available_width() - panel_width - 14.0).max(300.0);
+            let top_down = egui::Layout::top_down(egui::Align::Min);
+            ui.allocate_ui_with_layout(Vec2::new(list_width, available), top_down, |ui| self.account_list(ui));
             ui.add_space(12.0);
-            ui.allocate_ui(Vec2::new(ui.available_width(), available), |ui| self.launch_panel(ui));
+            ui.allocate_ui_with_layout(Vec2::new(panel_width.min(ui.available_width()), available), top_down, |ui| self.launch_panel(ui));
         });
     }
 
